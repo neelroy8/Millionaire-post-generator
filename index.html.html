@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carousel Template Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101013; --panel:#1a1a1f; --line:#2a2a31;
+    --text:#f2f2f4; --muted:#9a9aa3; --accent:#5865f2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    padding:20px 14px 70px;
+  }
+  h1{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(20px,4vw,28px);
+     text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  .sub{color:var(--muted);font-size:12.5px;margin-bottom:18px;text-align:center}
+
+  /* ---------- SLIDE PREVIEW ---------- */
+  .post{
+    position:relative;width:min(420px,94vw);aspect-ratio:4/5;
+    background:#1c1c22;overflow:hidden;border-radius:6px;
+    box-shadow:0 12px 40px rgba(0,0,0,.55);
+    touch-action:none;
+  }
+  .post img.bgimg{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    object-fit:cover;transform-origin:center center;
+    user-select:none;-webkit-user-drag:none;pointer-events:none;
+    display:none;
+  }
+  .post .noimg{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:#55555f;font-size:13px;letter-spacing:.4px;
+  }
+  .post .dragHint{
+    position:absolute;top:4%;left:5%;
+    background:rgba(0,0,0,.5);color:#fff;border-radius:999px;
+    padding:6px 12px;font-size:11px;font-weight:500;letter-spacing:.3px;
+    pointer-events:none;display:none;
+  }
+  .post .scrim{
+    position:absolute;left:0;right:0;bottom:0;height:55%;
+    background:linear-gradient(to top,
+      rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%,
+      rgba(0,0,0,.85) 62%, rgba(0,0,0,.45) 82%, rgba(0,0,0,0) 100%);
+    pointer-events:none;
+  }
+  .post .headline{
+    position:absolute;left:5%;right:5%;bottom:11%;text-align:center;
+    font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;
+    color:#fff;letter-spacing:.5px;line-height:1.12;font-size:34px;
+    text-shadow:0 2px 10px rgba(0,0,0,.6);white-space:pre-wrap;pointer-events:none;
+  }
+  .post .caption{
+    position:absolute;left:5.5%;right:7%;bottom:8.5%;text-align:left;
+    font-family:'Inter',sans-serif;font-weight:400;color:#fff;
+    line-height:1.28;font-size:25px;letter-spacing:.1px;
+    text-shadow:0 1px 8px rgba(0,0,0,.55);white-space:pre-wrap;pointer-events:none;
+  }
+  .post .footer{
+    position:absolute;left:5%;right:5%;bottom:3.5%;
+    display:flex;justify-content:space-between;align-items:center;
+    color:#fff;font-size:13px;letter-spacing:.6px;pointer-events:none;
+  }
+  .post .footer .handle{font-weight:600}
+  .post .pagecount{
+    position:absolute;top:4%;right:5%;
+    background:rgba(0,0,0,.5);color:#fff;border-radius:999px;
+    padding:6px 14px;font-size:13px;font-weight:500;pointer-events:none;
+  }
+
+  /* ---------- SLIDE TABS ---------- */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:16px 0 4px;max-width:440px}
+  .tab{
+    background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:500;
+  }
+  .tab.active{border-color:var(--accent);color:#fff;background:#23232c}
+  .tab.add{border-style:dashed}
+  .tab:hover{color:#fff}
+
+  /* ---------- CONTROLS ---------- */
+  .controls{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:18px;width:min(440px,94vw);display:flex;flex-direction:column;gap:14px;
+    margin-top:12px;
+  }
+  label{font-size:11.5px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;display:block;margin-bottom:6px}
+  textarea,input[type=text]{
+    width:100%;background:#0d0d10;border:1px solid var(--line);border-radius:8px;
+    color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;resize:vertical;
+  }
+  textarea{min-height:78px}
+  textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
+  input[type=file]{
+    width:100%;font-size:13px;color:var(--muted);
+    background:#0d0d10;border:1px dashed var(--line);border-radius:8px;padding:10px;
+  }
+  input[type=file]::file-selector-button{
+    background:#23232c;color:#fff;border:1px solid var(--line);border-radius:6px;
+    padding:7px 12px;margin-right:10px;font-family:'Inter',sans-serif;font-size:12.5px;cursor:pointer;
+  }
+  .row{display:flex;gap:12px}
+  .row > div{flex:1}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .typeBtns{display:flex;gap:8px}
+  .typeBtns button{
+    flex:1;background:#0d0d10;border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+  .typeBtns button.on{border-color:var(--accent);color:#fff;background:#1c1c28}
+  .btnrow{display:flex;gap:10px}
+  .btnrow button{flex:1}
+  button.primary{
+    background:var(--accent);color:#fff;border:none;border-radius:8px;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:13px;cursor:pointer;
+  }
+  button.ghost{
+    background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;
+    font-family:'Inter',sans-serif;font-weight:500;font-size:13px;padding:12px;cursor:pointer;
+  }
+  button.ghost:hover{color:#ff7a7a;border-color:#ff7a7a}
+  button.smallghost{
+    background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;
+    font-family:'Inter',sans-serif;font-size:12px;padding:9px;cursor:pointer;width:100%;
+  }
+  button.smallghost:hover{color:#fff}
+  button.primary:hover{filter:brightness(1.1)}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+
+<h1>Carousel Template</h1>
+<div class="sub">Slide 1 = bold cover &nbsp;•&nbsp; Slides 2+ = clean caption style</div>
+
+<!-- preview -->
+<div class="post" id="post">
+  <div class="noimg" id="noimg">No image yet — choose one below</div>
+  <img class="bgimg" id="bgimg" alt="">
+  <div class="pagecount" id="pagecount">1/1</div>
+  <div class="dragHint" id="dragHint">Drag to reposition</div>
+  <div class="scrim" id="scrim"></div>
+  <div class="headline" id="headline"></div>
+  <div class="caption" id="caption"></div>
+  <div class="footer" id="footerRow">
+    <span class="handle">@Millionaire.life.style</span>
+    <span>Swipe for more</span>
+  </div>
+</div>
+
+<!-- slide tabs -->
+<div class="tabs" id="tabs"></div>
+
+<!-- controls -->
+<div class="controls">
+  <div>
+    <label>Slide type</label>
+    <div class="typeBtns">
+      <button id="typeCover">Cover (bold caps)</button>
+      <button id="typeContent">Content (caption)</button>
+    </div>
+  </div>
+
+  <div>
+    <label for="textInput">Slide text</label>
+    <textarea id="textInput"></textarea>
+  </div>
+
+  <div>
+    <label for="imgInput">Slide image</label>
+    <input type="file" id="imgInput" accept="image/*">
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="zoomRange">Image zoom</label>
+      <input type="range" id="zoomRange" min="100" max="300" value="100">
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button class="smallghost" id="resetPos">Reset zoom &amp; position</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="sizeRange">Text size</label>
+      <input type="range" id="sizeRange" min="16" max="56" value="34">
+    </div>
+    <div>
+      <label for="fadeRange">Fade height</label>
+      <input type="range" id="fadeRange" min="30" max="80" value="55">
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="opacityRange">Fade darkness</label>
+      <input type="range" id="opacityRange" min="20" max="100" value="100">
+    </div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="handleInput">Bottom-left (cover only)</label>
+      <input type="text" id="handleInput" value="@Millionaire.life.style">
+    </div>
+    <div>
+      <label for="swipeInput">Bottom-right (cover only)</label>
+      <input type="text" id="swipeInput" value="Swipe for more">
+    </div>
+  </div>
+
+  <div class="btnrow">
+    <button class="primary" id="dlOne">Generate this slide</button>
+    <button class="primary" id="dlAll">Generate all</button>
+  </div>
+  <button class="ghost" id="delSlide">Delete this slide</button>
+
+  <div class="hint">Drag the photo in the preview to reposition it, and use Image zoom to crop in tighter. Fade darkness controls how strong the black gradient is. Tap Generate, then press and hold the finished slide → "Save to Photos".</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ---------- state ----------
+const newSlide = type => ({
+  type,
+  text: type === 'cover' ? "INSERT TEXT HERE" : "Insert text here",
+  imgData: null,
+  size: type === 'cover' ? 34 : 25,
+  fade: 55,
+  scrimOp: 1,        // 0.2 - 1
+  zoom: 1,           // 1 - 3
+  offX: 0, offY: 0   // fractions of slide width/height
+});
+const slides = [ newSlide('cover'), newSlide('content') ];
+let cur = 0;
+
+// ---------- render ----------
+function renderTabs(){
+  const t = $('tabs'); t.innerHTML = '';
+  slides.forEach((s,i)=>{
+    const b = document.createElement('button');
+    b.className = 'tab' + (i===cur?' active':'');
+    b.textContent = (i+1) + (s.type==='cover'?' · Cover':'');
+    b.onclick = ()=>{ cur=i; renderAll(); };
+    t.appendChild(b);
+  });
+  const add = document.createElement('button');
+  add.className = 'tab add'; add.textContent = '+ Add slide';
+  add.onclick = ()=>{ slides.push(newSlide('content')); cur = slides.length-1; renderAll(); };
+  t.appendChild(add);
+}
+
+function applyImgTransform(){
+  const s = slides[cur];
+  const post = $('post');
+  const px = s.offX * post.clientWidth;
+  const py = s.offY * post.clientHeight;
+  $('bgimg').style.transform = `translate(${px}px, ${py}px) scale(${s.zoom})`;
+}
+
+function renderPreview(){
+  const s = slides[cur];
+  $('pagecount').textContent = (cur+1) + '/' + slides.length;
+  const has = !!s.imgData;
+  $('bgimg').style.display = has ? 'block' : 'none';
+  if (has && $('bgimg').src !== s.imgData) $('bgimg').src = s.imgData;
+  applyImgTransform();
+  $('noimg').style.display = has ? 'none' : 'flex';
+  $('dragHint').style.display = has ? 'block' : 'none';
+  $('scrim').style.height = s.fade + '%';
+  $('scrim').style.opacity = s.scrimOp;
+
+  const isCover = s.type === 'cover';
+  $('headline').style.display = isCover ? 'block' : 'none';
+  $('caption').style.display  = isCover ? 'none'  : 'block';
+  $('footerRow').style.display = isCover ? 'flex' : 'none';
+  if (isCover){
+    $('headline').textContent = s.text;
+    $('headline').style.fontSize = s.size + 'px';
+  } else {
+    $('caption').textContent = s.text;
+    $('caption').style.fontSize = s.size + 'px';
+  }
+}
+
+function renderControls(){
+  const s = slides[cur];
+  $('typeCover').classList.toggle('on', s.type==='cover');
+  $('typeContent').classList.toggle('on', s.type==='content');
+  $('textInput').value = s.text;
+  $('sizeRange').value = s.size;
+  $('fadeRange').value = s.fade;
+  $('opacityRange').value = Math.round(s.scrimOp*100);
+  $('zoomRange').value = Math.round(s.zoom*100);
+  $('imgInput').value = '';
+}
+
+function renderAll(){ renderTabs(); renderControls(); renderPreview(); }
+
+// ---------- events ----------
+$('typeCover').onclick = ()=>{ const s=slides[cur]; if(s.type!=='cover'){ s.type='cover'; s.size=34; if(s.text==='Insert text here') s.text='INSERT TEXT HERE'; } renderAll(); };
+$('typeContent').onclick = ()=>{ const s=slides[cur]; if(s.type!=='content'){ s.type='content'; s.size=25; if(s.text==='INSERT TEXT HERE') s.text='Insert text here'; } renderAll(); };
+$('textInput').addEventListener('input', e=>{ slides[cur].text = e.target.value; renderPreview(); });
+$('sizeRange').addEventListener('input', e=>{ slides[cur].size = +e.target.value; renderPreview(); });
+$('fadeRange').addEventListener('input', e=>{ slides[cur].fade = +e.target.value; renderPreview(); });
+$('opacityRange').addEventListener('input', e=>{ slides[cur].scrimOp = +e.target.value/100; renderPreview(); });
+$('zoomRange').addEventListener('input', e=>{ slides[cur].zoom = +e.target.value/100; applyImgTransform(); });
+$('resetPos').onclick = ()=>{ const s=slides[cur]; s.zoom=1; s.offX=0; s.offY=0; renderControls(); renderPreview(); };
+
+$('handleInput').addEventListener('input', renderFooter);
+$('swipeInput').addEventListener('input', renderFooter);
+function renderFooter(){
+  $('footerRow').children[0].textContent = $('handleInput').value;
+  $('footerRow').children[1].textContent = $('swipeInput').value;
+}
+
+$('imgInput').addEventListener('change', e=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    const s = slides[cur];
+    s.imgData = ev.target.result;
+    s.zoom=1; s.offX=0; s.offY=0;
+    renderControls(); renderPreview();
+  };
+  r.readAsDataURL(f);
+});
+
+$('delSlide').onclick = ()=>{
+  if (slides.length === 1) return;
+  slides.splice(cur,1);
+  cur = Math.max(0, cur-1);
+  renderAll();
+};
+
+// ---------- drag to reposition (touch + mouse) ----------
+(function(){
+  const post = $('post');
+  let dragging=false, sx=0, sy=0, ox=0, oy=0;
+  const start = (x,y)=>{
+    if(!slides[cur].imgData) return;
+    dragging=true; sx=x; sy=y;
+    ox=slides[cur].offX; oy=slides[cur].offY;
+  };
+  const move = (x,y)=>{
+    if(!dragging) return;
+    const s=slides[cur];
+    s.offX = ox + (x-sx)/post.clientWidth;
+    s.offY = oy + (y-sy)/post.clientHeight;
+    applyImgTransform();
+  };
+  post.addEventListener('touchstart', e=>{ start(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+  post.addEventListener('touchmove', e=>{ if(dragging){ e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:false});
+  post.addEventListener('touchend', ()=>dragging=false);
+  post.addEventListener('mousedown', e=>{ start(e.clientX,e.clientY); });
+  window.addEventListener('mousemove', e=>move(e.clientX,e.clientY));
+  window.addEventListener('mouseup', ()=>dragging=false);
+})();
+
+// ---------- export ----------
+function loadImg(src){
+  return new Promise(res=>{
+    const i = new Image();
+    i.onload = ()=>res(i);
+    i.onerror = ()=>res(null);
+    i.src = src;
+  });
+}
+function drawAdjusted(ctx,img,W,H,zoom,offX,offY){
+  // cover-fit rect scaled by zoom around center, then shifted by offsets
+  const ir=img.width/img.height, r=W/H;
+  let dw,dh;
+  if(ir>r){ dh=H*zoom; dw=dh*ir; }
+  else { dw=W*zoom; dh=dw/ir; }
+  const dx=(W-dw)/2 + offX*W;
+  const dy=(H-dh)/2 + offY*H;
+  ctx.drawImage(img,dx,dy,dw,dh);
+}
+function wrapLines(ctx,text,maxW){
+  const out=[];
+  text.split('\n').forEach(par=>{
+    const words=par.split(/\s+/).filter(Boolean);
+    let line='';
+    words.forEach(w=>{
+      const t=line?line+' '+w:w;
+      if(ctx.measureText(t).width>maxW && line){ out.push(line); line=w; }
+      else line=t;
+    });
+    out.push(line);
+  });
+  return out;
+}
+
+async function exportSlide(idx){
+  const s = slides[idx];
+  await document.fonts.load('400 90px Anton');
+  await document.fonts.load('400 60px Inter');
+  await document.fonts.load('600 30px Inter');
+
+  const W=1080,H=1350, scale=W/420;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+
+  ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
+  if (s.imgData){
+    const img = await loadImg(s.imgData);
+    if(img) drawAdjusted(ctx,img,W,H,s.zoom,s.offX,s.offY);
+  }
+
+  // scrim: solid black at the bottom, fading out only at the top
+  const top = H*(1 - s.fade/100);
+  const g = ctx.createLinearGradient(0,H,0,top);
+  g.addColorStop(0,'rgba(0,0,0,1)');
+  g.addColorStop(.45,'rgba(0,0,0,1)');
+  g.addColorStop(.62,'rgba(0,0,0,.85)');
+  g.addColorStop(.82,'rgba(0,0,0,.45)');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.save();
+  ctx.globalAlpha = s.scrimOp;
+  ctx.fillStyle=g; ctx.fillRect(0,top,W,H-top);
+  ctx.restore();
+
+  ctx.fillStyle='#fff';
+  ctx.shadowColor='rgba(0,0,0,.6)';
+
+  if (s.type==='cover'){
+    const fontPx = s.size*scale;
+    ctx.font=`400 ${fontPx}px Anton`;
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    ctx.shadowBlur=18; ctx.shadowOffsetY=4;
+    const lines = wrapLines(ctx, s.text.toUpperCase(), W*0.9);
+    const lineH=fontPx*1.12, bottomY=H*0.89;
+    let y=bottomY-(lines.length-1)*lineH;
+    lines.forEach(l=>{ ctx.fillText(l,W/2,y); y+=lineH; });
+
+    ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+    ctx.font=`600 ${13*scale*0.9}px Inter`; ctx.textAlign='left';
+    ctx.fillText($('handleInput').value, W*0.05, H*0.975);
+    ctx.font=`400 ${13*scale*0.9}px Inter`; ctx.textAlign='right';
+    ctx.fillText($('swipeInput').value, W*0.95, H*0.975);
+  } else {
+    const fontPx = s.size*scale;
+    ctx.font=`400 ${fontPx}px Inter`;
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    ctx.shadowBlur=12; ctx.shadowOffsetY=2;
+    const lines = wrapLines(ctx, s.text, W*0.875);
+    const lineH=fontPx*1.28, bottomY=H*0.915;
+    let y=bottomY-(lines.length-1)*lineH;
+    lines.forEach(l=>{ ctx.fillText(l, W*0.055, y); y+=lineH; });
+  }
+
+  return cv.toDataURL('image/png');
+}
+
+// Show rendered PNGs full screen — long-press to save
+function showResult(dataUrls){
+  let ov = document.getElementById('resultOverlay');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'resultOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99;overflow-y:auto;padding:18px 14px 40px;display:flex;flex-direction:column;align-items:center;gap:14px;';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '';
+  const tip = document.createElement('div');
+  tip.style.cssText = 'color:#fff;font-size:14px;font-weight:600;text-align:center;line-height:1.5;';
+  tip.textContent = 'Press and hold an image, then tap "Save to Photos" (or "Add to Photos")';
+  ov.appendChild(tip);
+  dataUrls.forEach((u,i)=>{
+    const img = document.createElement('img');
+    img.src = u;
+    img.alt = 'Slide ' + (i+1);
+    img.style.cssText = 'width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);';
+    ov.appendChild(img);
+  });
+  const close = document.createElement('button');
+  close.textContent = 'Close';
+  close.style.cssText = 'background:#5865f2;color:#fff;border:none;border-radius:8px;font-family:Inter,sans-serif;font-weight:600;font-size:14px;padding:13px 40px;cursor:pointer;margin-top:6px;';
+  close.onclick = ()=> ov.remove();
+  ov.appendChild(close);
+  ov.scrollTop = 0;
+}
+
+$('dlOne').onclick = async ()=>{
+  const url = await exportSlide(cur);
+  showResult([url]);
+};
+$('dlAll').onclick = async ()=>{
+  const urls = [];
+  for(let i=0;i<slides.length;i++) urls.push(await exportSlide(i));
+  showResult(urls);
+};
+
+renderAll();
+</script>
+</body>
+</html>

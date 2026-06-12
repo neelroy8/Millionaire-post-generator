@@ -21,14 +21,13 @@
      text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
   .sub{color:var(--muted);font-size:12.5px;margin-bottom:18px;text-align:center}
 
-  /* ---------- SLIDE PREVIEW ---------- */
   .post{
     position:relative;width:min(420px,94vw);aspect-ratio:4/5;
     background:#1c1c22;overflow:hidden;border-radius:6px;
     box-shadow:0 12px 40px rgba(0,0,0,.55);
     touch-action:none;
   }
-  .post img.bgimg{
+  .post img.bgimg, .post video.bgvid{
     position:absolute;top:0;left:0;width:100%;height:100%;
     object-fit:cover;transform-origin:center center;
     user-select:none;-webkit-user-drag:none;pointer-events:none;
@@ -36,7 +35,7 @@
   }
   .post .noimg{
     position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    color:#55555f;font-size:13px;letter-spacing:.4px;
+    color:#55555f;font-size:13px;letter-spacing:.4px;text-align:center;padding:0 20px;
   }
   .post .dragHint{
     position:absolute;top:4%;left:5%;
@@ -75,7 +74,6 @@
     padding:6px 14px;font-size:13px;font-weight:500;pointer-events:none;
   }
 
-  /* ---------- SLIDE TABS ---------- */
   .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:16px 0 4px;max-width:440px}
   .tab{
     background:var(--panel);border:1px solid var(--line);color:var(--muted);
@@ -85,7 +83,6 @@
   .tab.add{border-style:dashed}
   .tab:hover{color:#fff}
 
-  /* ---------- CONTROLS ---------- */
   .controls{
     background:var(--panel);border:1px solid var(--line);border-radius:12px;
     padding:18px;width:min(440px,94vw);display:flex;flex-direction:column;gap:14px;
@@ -107,7 +104,8 @@
     padding:7px 12px;margin-right:10px;font-family:'Inter',sans-serif;font-size:12.5px;cursor:pointer;
   }
   .row{display:flex;gap:12px}
-  .row > div{flex:1}
+  .row > div{flex:1;display:flex;flex-direction:column;justify-content:flex-end}
+  .row label{min-height:16px}
   input[type=range]{width:100%;accent-color:var(--accent)}
   .typeBtns{display:flex;gap:8px}
   .typeBtns button{
@@ -121,11 +119,10 @@
     background:var(--accent);color:#fff;border:none;border-radius:8px;
     font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:13px;cursor:pointer;
   }
-  button.ghost{
-    background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;
-    font-family:'Inter',sans-serif;font-weight:500;font-size:13px;padding:12px;cursor:pointer;
+  button.danger{
+    background:transparent;color:#ff7a7a;border:1px solid #ff7a7a;border-radius:8px;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13px;padding:12px;cursor:pointer;
   }
-  button.ghost:hover{color:#ff7a7a;border-color:#ff7a7a}
   button.smallghost{
     background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;
     font-family:'Inter',sans-serif;font-size:12px;padding:9px;cursor:pointer;width:100%;
@@ -133,17 +130,24 @@
   button.smallghost:hover{color:#fff}
   button.primary:hover{filter:brightness(1.1)}
   .hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .recBanner{
+    display:none;position:fixed;top:0;left:0;right:0;z-index:98;
+    background:#b3261e;color:#fff;text-align:center;font-size:13px;font-weight:600;
+    padding:10px;letter-spacing:.3px;
+  }
 </style>
 </head>
 <body>
 
-<h1>Carousel Template</h1>
-<div class="sub">Slide 1 = bold cover &nbsp;•&nbsp; Slides 2+ = clean caption style</div>
+<div class="recBanner" id="recBanner">Rendering video… keep this page open</div>
 
-<!-- preview -->
+<h1>Carousel Template</h1>
+<div class="sub">Slide 1 = bold cover &nbsp;•&nbsp; Slides 2+ = clean caption style &nbsp;•&nbsp; photos or videos</div>
+
 <div class="post" id="post">
-  <div class="noimg" id="noimg">No image yet — choose one below</div>
+  <div class="noimg" id="noimg">No image or video yet — choose one below</div>
   <img class="bgimg" id="bgimg" alt="">
+  <video class="bgvid" id="bgvid" muted loop playsinline autoplay></video>
   <div class="pagecount" id="pagecount">1/1</div>
   <div class="dragHint" id="dragHint">Drag to reposition</div>
   <div class="scrim" id="scrim"></div>
@@ -155,10 +159,8 @@
   </div>
 </div>
 
-<!-- slide tabs -->
 <div class="tabs" id="tabs"></div>
 
-<!-- controls -->
 <div class="controls">
   <div>
     <label>Slide type</label>
@@ -174,13 +176,13 @@
   </div>
 
   <div>
-    <label for="imgInput">Slide image</label>
-    <input type="file" id="imgInput" accept="image/*">
+    <label for="imgInput">Slide image or video</label>
+    <input type="file" id="imgInput" accept="image/*,video/*">
   </div>
 
   <div class="row">
     <div>
-      <label for="zoomRange">Image zoom</label>
+      <label for="zoomRange">Zoom</label>
       <input type="range" id="zoomRange" min="100" max="300" value="100">
     </div>
     <div>
@@ -210,11 +212,11 @@
 
   <div class="row">
     <div>
-      <label for="handleInput">Bottom-left (cover only)</label>
+      <label for="handleInput">Bottom-left (cover)</label>
       <input type="text" id="handleInput" value="@Millionaire.life.style">
     </div>
     <div>
-      <label for="swipeInput">Bottom-right (cover only)</label>
+      <label for="swipeInput">Bottom-right (cover)</label>
       <input type="text" id="swipeInput" value="Swipe for more">
     </div>
   </div>
@@ -223,9 +225,9 @@
     <button class="primary" id="dlOne">Generate this slide</button>
     <button class="primary" id="dlAll">Generate all</button>
   </div>
-  <button class="ghost" id="delSlide">Delete this slide</button>
+  <button class="danger" id="delSlide">🗑 Delete this slide</button>
 
-  <div class="hint">Drag the photo in the preview to reposition it, and use Image zoom to crop in tighter. Fade darkness controls how strong the black gradient is. Tap Generate, then press and hold the finished slide → "Save to Photos".</div>
+  <div class="hint">Photos export instantly — press and hold the result, then "Save to Photos". Videos render in real time (a 10-second clip takes 10 seconds), then tap the Download button under the result. Videos export muted.</div>
 </div>
 
 <script>
@@ -235,12 +237,14 @@ const $ = id => document.getElementById(id);
 const newSlide = type => ({
   type,
   text: type === 'cover' ? "INSERT TEXT HERE" : "Insert text here",
-  imgData: null,
+  mediaKind: null,     // 'img' | 'vid'
+  imgData: null,       // dataURL for images
+  vidUrl: null,        // object URL for videos
   size: type === 'cover' ? 34 : 25,
   fade: 55,
-  scrimOp: 1,        // 0.2 - 1
-  zoom: 1,           // 1 - 3
-  offX: 0, offY: 0   // fractions of slide width/height
+  scrimOp: 1,
+  zoom: 1,
+  offX: 0, offY: 0
 });
 const slides = [ newSlide('cover'), newSlide('content') ];
 let cur = 0;
@@ -251,7 +255,7 @@ function renderTabs(){
   slides.forEach((s,i)=>{
     const b = document.createElement('button');
     b.className = 'tab' + (i===cur?' active':'');
-    b.textContent = (i+1) + (s.type==='cover'?' · Cover':'');
+    b.textContent = (i+1) + (s.type==='cover'?' · Cover':'') + (s.mediaKind==='vid'?' ▶':'');
     b.onclick = ()=>{ cur=i; renderAll(); };
     t.appendChild(b);
   });
@@ -261,23 +265,38 @@ function renderTabs(){
   t.appendChild(add);
 }
 
-function applyImgTransform(){
+function applyTransform(){
   const s = slides[cur];
   const post = $('post');
   const px = s.offX * post.clientWidth;
   const py = s.offY * post.clientHeight;
-  $('bgimg').style.transform = `translate(${px}px, ${py}px) scale(${s.zoom})`;
+  const tf = `translate(${px}px, ${py}px) scale(${s.zoom})`;
+  $('bgimg').style.transform = tf;
+  $('bgvid').style.transform = tf;
 }
 
 function renderPreview(){
   const s = slides[cur];
   $('pagecount').textContent = (cur+1) + '/' + slides.length;
-  const has = !!s.imgData;
-  $('bgimg').style.display = has ? 'block' : 'none';
-  if (has && $('bgimg').src !== s.imgData) $('bgimg').src = s.imgData;
-  applyImgTransform();
-  $('noimg').style.display = has ? 'none' : 'flex';
-  $('dragHint').style.display = has ? 'block' : 'none';
+  const isImg = s.mediaKind==='img', isVid = s.mediaKind==='vid';
+  $('bgimg').style.display = isImg ? 'block' : 'none';
+  $('bgvid').style.display = isVid ? 'block' : 'none';
+  if (isImg && $('bgimg').src !== s.imgData) $('bgimg').src = s.imgData;
+  if (isVid && $('bgvid').src !== s.vidUrl){
+    const bv = $('bgvid');
+    bv.muted = true;
+    bv.defaultMuted = true;
+    bv.loop = true;
+    bv.src = s.vidUrl;
+    bv.load();
+    const tryPlay = ()=> bv.play().catch(()=>{});
+    if (bv.readyState >= 2) tryPlay();
+    else bv.onloadeddata = tryPlay;
+  }
+  if (!isVid) { $('bgvid').pause(); }
+  applyTransform();
+  $('noimg').style.display = (isImg||isVid) ? 'none' : 'flex';
+  $('dragHint').style.display = (isImg||isVid) ? 'block' : 'none';
   $('scrim').style.height = s.fade + '%';
   $('scrim').style.opacity = s.scrimOp;
 
@@ -315,8 +334,8 @@ $('textInput').addEventListener('input', e=>{ slides[cur].text = e.target.value;
 $('sizeRange').addEventListener('input', e=>{ slides[cur].size = +e.target.value; renderPreview(); });
 $('fadeRange').addEventListener('input', e=>{ slides[cur].fade = +e.target.value; renderPreview(); });
 $('opacityRange').addEventListener('input', e=>{ slides[cur].scrimOp = +e.target.value/100; renderPreview(); });
-$('zoomRange').addEventListener('input', e=>{ slides[cur].zoom = +e.target.value/100; applyImgTransform(); });
-$('resetPos').onclick = ()=>{ const s=slides[cur]; s.zoom=1; s.offX=0; s.offY=0; renderControls(); renderPreview(); };
+$('zoomRange').addEventListener('input', e=>{ slides[cur].zoom = +e.target.value/100; applyTransform(); });
+$('resetPos').onclick = ()=>{ const s=slides[cur]; s.zoom=1; s.offX=0; s.offY=0; renderControls(); applyTransform(); };
 
 $('handleInput').addEventListener('input', renderFooter);
 $('swipeInput').addEventListener('input', renderFooter);
@@ -328,29 +347,49 @@ function renderFooter(){
 $('imgInput').addEventListener('change', e=>{
   const f = e.target.files && e.target.files[0];
   if(!f) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    const s = slides[cur];
-    s.imgData = ev.target.result;
-    s.zoom=1; s.offX=0; s.offY=0;
-    renderControls(); renderPreview();
-  };
-  r.readAsDataURL(f);
+  const s = slides[cur];
+  s.zoom=1; s.offX=0; s.offY=0;
+  const name = (f.name||'').toLowerCase();
+  const isVideo = (f.type && f.type.startsWith('video'))
+    || /\.(mov|mp4|m4v|webm|hevc|avi)$/.test(name)
+    || (!f.type && !/\.(jpg|jpeg|png|gif|webp|heic|heif)$/.test(name));
+  if (isVideo){
+    if (s.vidUrl) URL.revokeObjectURL(s.vidUrl);
+    s.vidUrl = URL.createObjectURL(f);
+    s.mediaKind = 'vid';
+    s.imgData = null;
+    renderAll();
+  } else {
+    const r = new FileReader();
+    r.onload = ev => {
+      s.imgData = ev.target.result;
+      s.mediaKind = 'img';
+      s.vidUrl = null;
+      renderAll();
+    };
+    r.readAsDataURL(f);
+  }
+});
+
+// surface video preview errors so we know what's wrong
+$('bgvid').addEventListener('error', ()=>{
+  const err = $('bgvid').error;
+  alert('Video preview error' + (err ? ' (code '+err.code+')' : '') + '. This video format may not be supported — try a different clip.');
 });
 
 $('delSlide').onclick = ()=>{
-  if (slides.length === 1) return;
+  if (slides.length === 1){ alert("You need at least one slide."); return; }
   slides.splice(cur,1);
   cur = Math.max(0, cur-1);
   renderAll();
 };
 
-// ---------- drag to reposition (touch + mouse) ----------
+// ---------- drag to reposition ----------
 (function(){
   const post = $('post');
   let dragging=false, sx=0, sy=0, ox=0, oy=0;
   const start = (x,y)=>{
-    if(!slides[cur].imgData) return;
+    if(!slides[cur].mediaKind) return;
     dragging=true; sx=x; sy=y;
     ox=slides[cur].offX; oy=slides[cur].offY;
   };
@@ -359,7 +398,7 @@ $('delSlide').onclick = ()=>{
     const s=slides[cur];
     s.offX = ox + (x-sx)/post.clientWidth;
     s.offY = oy + (y-sy)/post.clientHeight;
-    applyImgTransform();
+    applyTransform();
   };
   post.addEventListener('touchstart', e=>{ start(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
   post.addEventListener('touchmove', e=>{ if(dragging){ e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:false});
@@ -369,24 +408,15 @@ $('delSlide').onclick = ()=>{
   window.addEventListener('mouseup', ()=>dragging=false);
 })();
 
-// ---------- export ----------
-function loadImg(src){
-  return new Promise(res=>{
-    const i = new Image();
-    i.onload = ()=>res(i);
-    i.onerror = ()=>res(null);
-    i.src = src;
-  });
-}
-function drawAdjusted(ctx,img,W,H,zoom,offX,offY){
-  // cover-fit rect scaled by zoom around center, then shifted by offsets
-  const ir=img.width/img.height, r=W/H;
+// ---------- shared drawing ----------
+function drawAdjusted(ctx,el,natW,natH,W,H,zoom,offX,offY){
+  const ir=natW/natH, r=W/H;
   let dw,dh;
   if(ir>r){ dh=H*zoom; dw=dh*ir; }
   else { dw=W*zoom; dh=dw/ir; }
   const dx=(W-dw)/2 + offX*W;
   const dy=(H-dh)/2 + offY*H;
-  ctx.drawImage(img,dx,dy,dw,dh);
+  ctx.drawImage(el,dx,dy,dw,dh);
 }
 function wrapLines(ctx,text,maxW){
   const out=[];
@@ -402,24 +432,8 @@ function wrapLines(ctx,text,maxW){
   });
   return out;
 }
-
-async function exportSlide(idx){
-  const s = slides[idx];
-  await document.fonts.load('400 90px Anton');
-  await document.fonts.load('400 60px Inter');
-  await document.fonts.load('600 30px Inter');
-
-  const W=1080,H=1350, scale=W/420;
-  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
-  const ctx=cv.getContext('2d');
-
-  ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
-  if (s.imgData){
-    const img = await loadImg(s.imgData);
-    if(img) drawAdjusted(ctx,img,W,H,s.zoom,s.offX,s.offY);
-  }
-
-  // scrim: solid black at the bottom, fading out only at the top
+function drawOverlay(ctx, s, W, H){
+  const scale=W/420;
   const top = H*(1 - s.fade/100);
   const g = ctx.createLinearGradient(0,H,0,top);
   g.addColorStop(0,'rgba(0,0,0,1)');
@@ -460,12 +474,136 @@ async function exportSlide(idx){
     let y=bottomY-(lines.length-1)*lineH;
     lines.forEach(l=>{ ctx.fillText(l, W*0.055, y); y+=lineH; });
   }
-
-  return cv.toDataURL('image/png');
+  ctx.shadowBlur=0; ctx.shadowOffsetY=0;
 }
 
-// Show rendered PNGs full screen — long-press to save
-function showResult(dataUrls){
+// ---------- image export ----------
+function loadImg(src){
+  return new Promise(res=>{
+    const i = new Image();
+    i.onload = ()=>res(i);
+    i.onerror = ()=>res(null);
+    i.src = src;
+  });
+}
+async function exportImageSlide(s){
+  await document.fonts.load('400 90px Anton');
+  await document.fonts.load('400 60px Inter');
+  await document.fonts.load('600 30px Inter');
+  const W=1080,H=1350;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
+  if (s.imgData){
+    const img = await loadImg(s.imgData);
+    if(img) drawAdjusted(ctx,img,img.width,img.height,W,H,s.zoom,s.offX,s.offY);
+  }
+  drawOverlay(ctx, s, W, H);
+  return { kind:'img', url: cv.toDataURL('image/png') };
+}
+
+// ---------- video export (renders in real time) ----------
+function exportVideoSlide(s){
+  return new Promise(async (resolve)=>{
+    await document.fonts.load('400 90px Anton');
+    await document.fonts.load('400 60px Inter');
+    await document.fonts.load('600 30px Inter');
+    const W=1080,H=1350;
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const ctx=cv.getContext('2d');
+
+    const v=document.createElement('video');
+    v.src=s.vidUrl; v.playsInline=true; v.setAttribute('playsinline','');
+    v.muted=true; // start muted so playback is always allowed
+    v.preload='auto';
+
+    const metaOk = await new Promise(r=>{
+      v.onloadedmetadata=()=>r(true);
+      v.onerror=()=>r(false);
+      setTimeout(()=>r(v.readyState>=1), 8000);
+    });
+    if(!metaOk || !v.videoWidth){
+      alert('Could not load this video. Try a different clip (MP4 or a normal camera roll video works best).');
+      resolve(null); return;
+    }
+
+    let stream;
+    try{ stream = cv.captureStream(30); }
+    catch(e){ try{ stream = cv.captureStream(); }catch(e2){ stream=null; } }
+    if(!stream){
+      alert('This browser cannot record from a canvas. Try opening the site in Safari or Chrome.');
+      resolve(null); return;
+    }
+
+    // videos render muted — no audio track needed
+
+    let mime = '';
+    if (window.MediaRecorder){
+      const candidates=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm'];
+      for(const c of candidates){ if(MediaRecorder.isTypeSupported(c)){ mime=c; break; } }
+    }
+    if (!window.MediaRecorder || !mime){
+      alert('Video rendering is not supported in this browser. Try Safari or Chrome.');
+      resolve(null); return;
+    }
+
+    let rec;
+    try{ rec = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond: 8000000 }); }
+    catch(e){
+      try{ rec = new MediaRecorder(stream); mime = rec.mimeType || 'video/webm'; }
+      catch(e2){ alert('Recording failed to start: '+e2.message); resolve(null); return; }
+    }
+    const chunks=[];
+    rec.ondataavailable = e=>{ if(e.data && e.data.size>0) chunks.push(e.data); };
+    rec.onstop = ()=>{
+      if(!chunks.length){ alert('Recording produced no data — this browser may not support canvas video recording. Try Chrome.'); resolve(null); return; }
+      const ext = mime.indexOf('mp4')>-1 ? 'mp4' : 'webm';
+      const blob = new Blob(chunks, {type: mime.split(';')[0]});
+      resolve({ kind:'vid', url: URL.createObjectURL(blob), ext });
+    };
+    rec.onerror = e=>{ alert('Recording error: '+(e.error&&e.error.message||'unknown')); resolve(null); };
+
+    // start playback — retry muted if sound playback is blocked
+    try{ await v.play(); }
+    catch(err){
+      v.muted=true;
+      try{ await v.play(); }
+      catch(err2){
+        alert('Could not play the video for rendering: '+err2.message);
+        resolve(null); return;
+      }
+    }
+
+    rec.start(250);
+    let running = true;
+    function draw(){
+      if(!running) return;
+      ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
+      try{ drawAdjusted(ctx,v,v.videoWidth,v.videoHeight,W,H,s.zoom,s.offX,s.offY); }catch(e){}
+      drawOverlay(ctx, s, W, H);
+      requestAnimationFrame(draw);
+    }
+    v.onended = ()=>{ running=false; setTimeout(()=>{ try{rec.stop();}catch(e){} }, 300);
+    };
+    // safety: hard stop if onended never fires
+    setTimeout(()=>{ if(running){ running=false; try{rec.stop();}catch(e){} } }, (v.duration||60)*1000 + 4000);
+    draw();
+  });
+}
+
+async function exportSlide(idx){
+  const s = slides[idx];
+  if (s.mediaKind==='vid') {
+    $('recBanner').style.display='block';
+    const out = await exportVideoSlide(s);
+    $('recBanner').style.display='none';
+    return out;
+  }
+  return exportImageSlide(s);
+}
+
+// ---------- result overlay ----------
+function showResult(items){
   let ov = document.getElementById('resultOverlay');
   if(!ov){
     ov = document.createElement('div');
@@ -476,31 +614,44 @@ function showResult(dataUrls){
   ov.innerHTML = '';
   const tip = document.createElement('div');
   tip.style.cssText = 'color:#fff;font-size:14px;font-weight:600;text-align:center;line-height:1.5;';
-  tip.textContent = 'Press and hold an image, then tap "Save to Photos" (or "Add to Photos")';
+  tip.textContent = 'Photos: press and hold → Save to Photos.  Videos: tap the Download button.';
   ov.appendChild(tip);
-  dataUrls.forEach((u,i)=>{
-    const img = document.createElement('img');
-    img.src = u;
-    img.alt = 'Slide ' + (i+1);
-    img.style.cssText = 'width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);';
-    ov.appendChild(img);
+  items.forEach((it,i)=>{
+    if(!it) return;
+    if (it.kind==='img'){
+      const img = document.createElement('img');
+      img.src = it.url;
+      img.alt = 'Slide ' + (i+1);
+      img.style.cssText = 'width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);';
+      ov.appendChild(img);
+    } else {
+      const vid = document.createElement('video');
+      vid.src = it.url; vid.controls = true; vid.playsInline = true;
+      vid.style.cssText = 'width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);';
+      ov.appendChild(vid);
+      const a = document.createElement('a');
+      a.href = it.url; a.download = 'slide-' + (i+1) + '.' + it.ext;
+      a.textContent = '⬇ Download video (slide ' + (i+1) + ')';
+      a.style.cssText = 'background:#5865f2;color:#fff;border-radius:8px;font-weight:600;font-size:14px;padding:12px 26px;text-decoration:none;';
+      ov.appendChild(a);
+    }
   });
   const close = document.createElement('button');
   close.textContent = 'Close';
-  close.style.cssText = 'background:#5865f2;color:#fff;border:none;border-radius:8px;font-family:Inter,sans-serif;font-weight:600;font-size:14px;padding:13px 40px;cursor:pointer;margin-top:6px;';
+  close.style.cssText = 'background:#2a2a31;color:#fff;border:none;border-radius:8px;font-family:Inter,sans-serif;font-weight:600;font-size:14px;padding:13px 40px;cursor:pointer;margin-top:6px;';
   close.onclick = ()=> ov.remove();
   ov.appendChild(close);
   ov.scrollTop = 0;
 }
 
 $('dlOne').onclick = async ()=>{
-  const url = await exportSlide(cur);
-  showResult([url]);
+  const item = await exportSlide(cur);
+  if(item) showResult([item]);
 };
 $('dlAll').onclick = async ()=>{
-  const urls = [];
-  for(let i=0;i<slides.length;i++) urls.push(await exportSlide(i));
-  showResult(urls);
+  const items = [];
+  for(let i=0;i<slides.length;i++) items.push(await exportSlide(i));
+  showResult(items);
 };
 
 renderAll();

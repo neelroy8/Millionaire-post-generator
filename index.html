@@ -68,6 +68,18 @@
     color:#fff;font-size:13px;letter-spacing:.6px;pointer-events:none;
   }
   .post .footer .handle{font-weight:600}
+  .post .circle{
+    position:absolute;border-radius:50%;overflow:hidden;
+    border:3px solid #fff;background:#333;
+    box-shadow:0 6px 18px rgba(0,0,0,.45);pointer-events:none;
+    transform:translate(-50%,-50%);
+  }
+  .post .circle img, .post .circle video{
+    width:100%;height:100%;object-fit:cover;
+    transform-origin:center center;display:block;
+    pointer-events:none;user-select:none;-webkit-user-drag:none;
+  }
+  .post .circle.sel{border-color:#5865f2;box-shadow:0 0 0 3px rgba(88,101,242,.55),0 6px 18px rgba(0,0,0,.45)}
   .post .pagecount{
     position:absolute;top:4%;right:5%;
     background:rgba(0,0,0,.5);color:#fff;border-radius:999px;
@@ -180,9 +192,28 @@
     <input type="file" id="imgInput" accept="image/*,video/*">
   </div>
 
+  <div>
+    <label for="circAddInput">Add circle (photo or video)</label>
+    <input type="file" id="circAddInput" accept="image/*,video/*">
+  </div>
   <div class="row">
     <div>
-      <label for="zoomRange">Zoom</label>
+      <label for="circSizeRange">Circle size (selected)</label>
+      <input type="range" id="circSizeRange" min="15" max="60" value="33">
+    </div>
+    <div>
+      <label for="circZoomRange">Circle zoom (selected)</label>
+      <input type="range" id="circZoomRange" min="100" max="300" value="100">
+    </div>
+  </div>
+  <div class="row">
+    <div><button class="smallghost" id="circDelete">✕ Delete selected circle</button></div>
+    <div></div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="zoomRange">Background zoom</label>
       <input type="range" id="zoomRange" min="100" max="300" value="100">
     </div>
     <div>
@@ -227,7 +258,7 @@
   </div>
   <button class="danger" id="delSlide">🗑 Delete this slide</button>
 
-  <div class="hint">Photos export instantly — press and hold the result, then "Save to Photos". Videos render in real time (a 10-second clip takes 10 seconds), then tap the Download button under the result. Videos export muted.</div>
+  <div class="hint">Circles: add a photo or video — tap a circle to select (blue ring), drag to move, use Circle size / Circle zoom to fit it, ✕ to delete. Tap empty space to deselect and drag the background. If any video is on the slide (background or circle), it generates as a video. Videos export muted. Photos: press and hold the result → Save to Photos. Videos: tap Download.</div>
 </div>
 
 <script>
@@ -238,16 +269,25 @@ const newSlide = type => ({
   type,
   text: type === 'cover' ? "INSERT TEXT HERE" : "Insert text here",
   mediaKind: null,     // 'img' | 'vid'
-  imgData: null,       // dataURL for images
-  vidUrl: null,        // object URL for videos
+  imgData: null,
+  vidUrl: null,
   size: type === 'cover' ? 34 : 25,
   fade: 55,
   scrimOp: 1,
   zoom: 1,
-  offX: 0, offY: 0
+  offX: 0, offY: 0,
+  circles: []          // {kind:'img'|'vid', src, x, y, size, cZoom}
 });
 const slides = [ newSlide('cover'), newSlide('content') ];
 let cur = 0;
+let selCircle = -1;
+
+function isVideoFile(f){
+  const name = (f.name||'').toLowerCase();
+  return (f.type && f.type.startsWith('video'))
+    || /\.(mov|mp4|m4v|webm|hevc|avi)$/.test(name)
+    || (!f.type && !/\.(jpg|jpeg|png|gif|webp|heic|heif)$/.test(name));
+}
 
 // ---------- render ----------
 function renderTabs(){
@@ -255,13 +295,14 @@ function renderTabs(){
   slides.forEach((s,i)=>{
     const b = document.createElement('button');
     b.className = 'tab' + (i===cur?' active':'');
-    b.textContent = (i+1) + (s.type==='cover'?' · Cover':'') + (s.mediaKind==='vid'?' ▶':'');
-    b.onclick = ()=>{ cur=i; renderAll(); };
+    const hasVid = s.mediaKind==='vid' || s.circles.some(c=>c.kind==='vid');
+    b.textContent = (i+1) + (s.type==='cover'?' · Cover':'') + (hasVid?' ▶':'');
+    b.onclick = ()=>{ cur=i; selCircle=-1; renderAll(); };
     t.appendChild(b);
   });
   const add = document.createElement('button');
   add.className = 'tab add'; add.textContent = '+ Add slide';
-  add.onclick = ()=>{ slides.push(newSlide('content')); cur = slides.length-1; renderAll(); };
+  add.onclick = ()=>{ slides.push(newSlide('content')); cur = slides.length-1; selCircle=-1; renderAll(); };
   t.appendChild(add);
 }
 
@@ -275,6 +316,36 @@ function applyTransform(){
   $('bgvid').style.transform = tf;
 }
 
+function renderCircles(){
+  const s = slides[cur];
+  const post = $('post');
+  post.querySelectorAll('.circle').forEach(el=>el.remove());
+  s.circles.forEach((c,i)=>{
+    const el = document.createElement('div');
+    el.className = 'circle' + (i===selCircle?' sel':'');
+    el.style.left = (c.x*100)+'%';
+    el.style.top = (c.y*100)+'%';
+    el.style.width = (c.size*100)+'%';
+    el.style.aspectRatio = '1/1';
+    let inner;
+    if (c.kind==='vid'){
+      inner = document.createElement('video');
+      inner.src = c.src;
+      inner.muted = true; inner.defaultMuted = true;
+      inner.loop = true; inner.playsInline = true;
+      inner.setAttribute('playsinline','');
+      inner.autoplay = true;
+      inner.play().catch(()=>{});
+    } else {
+      inner = document.createElement('img');
+      inner.src = c.src;
+    }
+    inner.style.transform = `scale(${c.cZoom||1})`;
+    el.appendChild(inner);
+    post.appendChild(el);
+  });
+}
+
 function renderPreview(){
   const s = slides[cur];
   $('pagecount').textContent = (cur+1) + '/' + slides.length;
@@ -284,9 +355,7 @@ function renderPreview(){
   if (isImg && $('bgimg').src !== s.imgData) $('bgimg').src = s.imgData;
   if (isVid && $('bgvid').src !== s.vidUrl){
     const bv = $('bgvid');
-    bv.muted = true;
-    bv.defaultMuted = true;
-    bv.loop = true;
+    bv.muted = true; bv.defaultMuted = true; bv.loop = true;
     bv.src = s.vidUrl;
     bv.load();
     const tryPlay = ()=> bv.play().catch(()=>{});
@@ -295,10 +364,12 @@ function renderPreview(){
   }
   if (!isVid) { $('bgvid').pause(); }
   applyTransform();
-  $('noimg').style.display = (isImg||isVid) ? 'none' : 'flex';
+  $('noimg').style.display = (isImg||isVid||slides[cur].circles.length) ? 'none' : 'flex';
   $('dragHint').style.display = (isImg||isVid) ? 'block' : 'none';
   $('scrim').style.height = s.fade + '%';
   $('scrim').style.opacity = s.scrimOp;
+
+  renderCircles();
 
   const isCover = s.type === 'cover';
   $('headline').style.display = isCover ? 'block' : 'none';
@@ -323,6 +394,7 @@ function renderControls(){
   $('opacityRange').value = Math.round(s.scrimOp*100);
   $('zoomRange').value = Math.round(s.zoom*100);
   $('imgInput').value = '';
+  $('circAddInput').value = '';
 }
 
 function renderAll(){ renderTabs(); renderControls(); renderPreview(); }
@@ -349,11 +421,7 @@ $('imgInput').addEventListener('change', e=>{
   if(!f) return;
   const s = slides[cur];
   s.zoom=1; s.offX=0; s.offY=0;
-  const name = (f.name||'').toLowerCase();
-  const isVideo = (f.type && f.type.startsWith('video'))
-    || /\.(mov|mp4|m4v|webm|hevc|avi)$/.test(name)
-    || (!f.type && !/\.(jpg|jpeg|png|gif|webp|heic|heif)$/.test(name));
-  if (isVideo){
+  if (isVideoFile(f)){
     if (s.vidUrl) URL.revokeObjectURL(s.vidUrl);
     s.vidUrl = URL.createObjectURL(f);
     s.mediaKind = 'vid';
@@ -371,7 +439,52 @@ $('imgInput').addEventListener('change', e=>{
   }
 });
 
-// surface video preview errors so we know what's wrong
+// add a circle (photo or video)
+$('circAddInput').addEventListener('change', e=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  const s = slides[cur];
+  const spots = [{x:.22,y:.18},{x:.78,y:.18},{x:.5,y:.18}];
+  const spot = spots[Math.min(s.circles.length, spots.length-1)];
+  const add = (kind, src)=>{
+    s.circles.push({ kind, src, x: spot.x, y: spot.y, size:.33, cZoom:1 });
+    selCircle = s.circles.length-1;
+    $('circSizeRange').value = 33;
+    $('circZoomRange').value = 100;
+    $('circAddInput').value = '';
+    renderTabs(); renderPreview();
+  };
+  if (isVideoFile(f)){
+    add('vid', URL.createObjectURL(f));
+  } else {
+    const r = new FileReader();
+    r.onload = ev => add('img', ev.target.result);
+    r.readAsDataURL(f);
+  }
+});
+$('circSizeRange').addEventListener('input', e=>{
+  const s = slides[cur];
+  if (selCircle>=0 && s.circles[selCircle]){
+    s.circles[selCircle].size = +e.target.value/100;
+    renderPreview();
+  }
+});
+$('circZoomRange').addEventListener('input', e=>{
+  const s = slides[cur];
+  if (selCircle>=0 && s.circles[selCircle]){
+    s.circles[selCircle].cZoom = +e.target.value/100;
+    renderPreview();
+  }
+});
+$('circDelete').onclick = ()=>{
+  const s = slides[cur];
+  if (selCircle>=0 && s.circles[selCircle]){
+    s.circles.splice(selCircle,1);
+    selCircle = -1;
+    renderTabs(); renderPreview();
+  }
+};
+
 $('bgvid').addEventListener('error', ()=>{
   const err = $('bgvid').error;
   alert('Video preview error' + (err ? ' (code '+err.code+')' : '') + '. This video format may not be supported — try a different clip.');
@@ -381,14 +494,46 @@ $('delSlide').onclick = ()=>{
   if (slides.length === 1){ alert("You need at least one slide."); return; }
   slides.splice(cur,1);
   cur = Math.max(0, cur-1);
+  selCircle = -1;
   renderAll();
 };
 
-// ---------- drag to reposition ----------
+// ---------- drag: circles first, then background ----------
 (function(){
   const post = $('post');
-  let dragging=false, sx=0, sy=0, ox=0, oy=0;
+  let dragging=false, dragCircle=-1, sx=0, sy=0, ox=0, oy=0;
+
+  function hitCircle(fx, fy){
+    const s = slides[cur];
+    for (let i=s.circles.length-1; i>=0; i--){
+      const c = s.circles[i];
+      const dx = fx - c.x;
+      const dy = (fy - c.y) * 1.25;
+      if (Math.sqrt(dx*dx + dy*dy) <= c.size/2) return i;
+    }
+    return -1;
+  }
+
   const start = (x,y)=>{
+    const rect = post.getBoundingClientRect();
+    const fx = (x-rect.left)/rect.width;
+    const fy = (y-rect.top)/rect.height;
+    const hit = hitCircle(fx, fy);
+    if (hit >= 0){
+      dragCircle = hit;
+      if (selCircle !== hit){
+        selCircle = hit;
+        $('circSizeRange').value = Math.round(slides[cur].circles[hit].size*100);
+        $('circZoomRange').value = Math.round((slides[cur].circles[hit].cZoom||1)*100);
+        renderPreview();
+      }
+      dragging = true; sx=x; sy=y;
+      ox = slides[cur].circles[hit].x;
+      oy = slides[cur].circles[hit].y;
+      return;
+    }
+    dragCircle = -1;
+    if (selCircle !== -1){ selCircle=-1; renderPreview(); }
     if(!slides[cur].mediaKind) return;
     dragging=true; sx=x; sy=y;
     ox=slides[cur].offX; oy=slides[cur].offY;
@@ -396,16 +541,25 @@ $('delSlide').onclick = ()=>{
   const move = (x,y)=>{
     if(!dragging) return;
     const s=slides[cur];
-    s.offX = ox + (x-sx)/post.clientWidth;
-    s.offY = oy + (y-sy)/post.clientHeight;
+    const rect = post.getBoundingClientRect();
+    if (dragCircle >= 0 && s.circles[dragCircle]){
+      const c = s.circles[dragCircle];
+      c.x = Math.min(1, Math.max(0, ox + (x-sx)/rect.width));
+      c.y = Math.min(1, Math.max(0, oy + (y-sy)/rect.height));
+      const el = post.querySelectorAll('.circle')[dragCircle];
+      if (el){ el.style.left=(c.x*100)+'%'; el.style.top=(c.y*100)+'%'; }
+      return;
+    }
+    s.offX = ox + (x-sx)/rect.width;
+    s.offY = oy + (y-sy)/rect.height;
     applyTransform();
   };
   post.addEventListener('touchstart', e=>{ start(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
   post.addEventListener('touchmove', e=>{ if(dragging){ e.preventDefault(); move(e.touches[0].clientX, e.touches[0].clientY); } }, {passive:false});
-  post.addEventListener('touchend', ()=>dragging=false);
+  post.addEventListener('touchend', ()=>{ dragging=false; dragCircle=-1; });
   post.addEventListener('mousedown', e=>{ start(e.clientX,e.clientY); });
   window.addEventListener('mousemove', e=>move(e.clientX,e.clientY));
-  window.addEventListener('mouseup', ()=>dragging=false);
+  window.addEventListener('mouseup', ()=>{ dragging=false; dragCircle=-1; });
 })();
 
 // ---------- shared drawing ----------
@@ -476,8 +630,34 @@ function drawOverlay(ctx, s, W, H){
   }
   ctx.shadowBlur=0; ctx.shadowOffsetY=0;
 }
+function drawCircleEl(ctx, el, natW, natH, cx, cy, d, zoom){
+  if(!natW || !natH) return;
+  const side = Math.min(natW, natH) / (zoom||1);
+  const sx = (natW - side)/2;
+  const sy = (natH - side)/2;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, d/2, 0, Math.PI*2); ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(el, sx, sy, side, side, cx - d/2, cy - d/2, d, d);
+  ctx.restore();
+  ctx.save();
+  ctx.lineWidth = Math.max(6, d*0.022);
+  ctx.strokeStyle = '#fff';
+  ctx.shadowColor = 'rgba(0,0,0,.45)';
+  ctx.shadowBlur = 16; ctx.shadowOffsetY = 5;
+  ctx.beginPath(); ctx.arc(cx, cy, d/2, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+function drawCircles(ctx, circs, W, H){
+  circs.forEach(c=>{
+    if(!c.el) return;
+    const natW = c.kind==='vid' ? c.el.videoWidth : c.el.width;
+    const natH = c.kind==='vid' ? c.el.videoHeight : c.el.height;
+    drawCircleEl(ctx, c.el, natW, natH, c.x*W, c.y*H, c.size*W, c.cZoom||1);
+  });
+}
 
-// ---------- image export ----------
+// ---------- media loading ----------
 function loadImg(src){
   return new Promise(res=>{
     const i = new Image();
@@ -486,6 +666,40 @@ function loadImg(src){
     i.src = src;
   });
 }
+function loadVid(src, loop){
+  return new Promise(res=>{
+    const v=document.createElement('video');
+    v.src=src; v.playsInline=true; v.setAttribute('playsinline','');
+    v.muted=true; v.defaultMuted=true; v.preload='auto';
+    v.loop = !!loop;
+    v.onloadedmetadata = ()=>res(v);
+    v.onerror = ()=>res(null);
+    setTimeout(()=>res(v.readyState>=1 ? v : null), 8000);
+  });
+}
+async function preloadCircles(s, primaryIsBg){
+  const circs=[];
+  // find the longest circle video to act as primary when there's no bg video
+  let primaryIdx=-1, maxDur=0;
+  if(!primaryIsBg){
+    s.circles.forEach((c,i)=>{
+      if(c.kind==='vid'){ primaryIdx = primaryIdx===-1 ? i : primaryIdx; }
+    });
+  }
+  for (let i=0;i<s.circles.length;i++){
+    const c=s.circles[i];
+    if (c.kind==='vid'){
+      const isPrimary = !primaryIsBg && i===primaryIdx;
+      const v = await loadVid(c.src, !isPrimary); // primary doesn't loop so it can end the recording
+      circs.push({ ...c, el:v, isPrimary });
+    } else {
+      circs.push({ ...c, el: await loadImg(c.src), isPrimary:false });
+    }
+  }
+  return circs;
+}
+
+// ---------- image export ----------
 async function exportImageSlide(s){
   await document.fonts.load('400 90px Anton');
   await document.fonts.load('400 60px Inter');
@@ -499,10 +713,12 @@ async function exportImageSlide(s){
     if(img) drawAdjusted(ctx,img,img.width,img.height,W,H,s.zoom,s.offX,s.offY);
   }
   drawOverlay(ctx, s, W, H);
+  const circs = await preloadCircles(s, true);
+  drawCircles(ctx, circs, W, H);
   return { kind:'img', url: cv.toDataURL('image/png') };
 }
 
-// ---------- video export (renders in real time) ----------
+// ---------- video export (bg video and/or circle videos) ----------
 function exportVideoSlide(s){
   return new Promise(async (resolve)=>{
     await document.fonts.load('400 90px Anton');
@@ -512,18 +728,23 @@ function exportVideoSlide(s){
     const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
     const ctx=cv.getContext('2d');
 
-    const v=document.createElement('video');
-    v.src=s.vidUrl; v.playsInline=true; v.setAttribute('playsinline','');
-    v.muted=true; // start muted so playback is always allowed
-    v.preload='auto';
+    const bgIsVid = s.mediaKind==='vid';
+    let bgEl=null, bgImgEl=null;
+    if (bgIsVid){
+      bgEl = await loadVid(s.vidUrl, false);
+      if(!bgEl || !bgEl.videoWidth){
+        alert('Could not load the background video. Try a different clip.');
+        resolve(null); return;
+      }
+    } else if (s.imgData){
+      bgImgEl = await loadImg(s.imgData);
+    }
 
-    const metaOk = await new Promise(r=>{
-      v.onloadedmetadata=()=>r(true);
-      v.onerror=()=>r(false);
-      setTimeout(()=>r(v.readyState>=1), 8000);
-    });
-    if(!metaOk || !v.videoWidth){
-      alert('Could not load this video. Try a different clip (MP4 or a normal camera roll video works best).');
+    const circs = await preloadCircles(s, bgIsVid);
+    const circleVids = circs.filter(c=>c.kind==='vid' && c.el);
+    const primary = bgIsVid ? bgEl : (circleVids.find(c=>c.isPrimary)||{}).el;
+    if (!primary){
+      alert('No playable video found on this slide.');
       resolve(null); return;
     }
 
@@ -531,11 +752,9 @@ function exportVideoSlide(s){
     try{ stream = cv.captureStream(30); }
     catch(e){ try{ stream = cv.captureStream(); }catch(e2){ stream=null; } }
     if(!stream){
-      alert('This browser cannot record from a canvas. Try opening the site in Safari or Chrome.');
+      alert('This browser cannot record from a canvas. Try Safari or Chrome.');
       resolve(null); return;
     }
-
-    // videos render muted — no audio track needed
 
     let mime = '';
     if (window.MediaRecorder){
@@ -563,14 +782,15 @@ function exportVideoSlide(s){
     };
     rec.onerror = e=>{ alert('Recording error: '+(e.error&&e.error.message||'unknown')); resolve(null); };
 
-    // start playback — retry muted if sound playback is blocked
-    try{ await v.play(); }
-    catch(err){
-      v.muted=true;
+    // start all videos
+    const allVids = [];
+    if (bgEl) allVids.push(bgEl);
+    circleVids.forEach(c=>allVids.push(c.el));
+    for (const v of allVids){
       try{ await v.play(); }
-      catch(err2){
-        alert('Could not play the video for rendering: '+err2.message);
-        resolve(null); return;
+      catch(err){
+        v.muted=true;
+        try{ await v.play(); }catch(err2){}
       }
     }
 
@@ -579,21 +799,24 @@ function exportVideoSlide(s){
     function draw(){
       if(!running) return;
       ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
-      try{ drawAdjusted(ctx,v,v.videoWidth,v.videoHeight,W,H,s.zoom,s.offX,s.offY); }catch(e){}
+      try{
+        if (bgEl) drawAdjusted(ctx,bgEl,bgEl.videoWidth,bgEl.videoHeight,W,H,s.zoom,s.offX,s.offY);
+        else if (bgImgEl) drawAdjusted(ctx,bgImgEl,bgImgEl.width,bgImgEl.height,W,H,s.zoom,s.offX,s.offY);
+      }catch(e){}
       drawOverlay(ctx, s, W, H);
+      drawCircles(ctx, circs, W, H);
       requestAnimationFrame(draw);
     }
-    v.onended = ()=>{ running=false; setTimeout(()=>{ try{rec.stop();}catch(e){} }, 300);
-    };
-    // safety: hard stop if onended never fires
-    setTimeout(()=>{ if(running){ running=false; try{rec.stop();}catch(e){} } }, (v.duration||60)*1000 + 4000);
+    primary.onended = ()=>{ running=false; setTimeout(()=>{ try{rec.stop();}catch(e){} }, 300); };
+    setTimeout(()=>{ if(running){ running=false; try{rec.stop();}catch(e){} } }, (primary.duration||60)*1000 + 4000);
     draw();
   });
 }
 
 async function exportSlide(idx){
   const s = slides[idx];
-  if (s.mediaKind==='vid') {
+  const hasVid = s.mediaKind==='vid' || s.circles.some(c=>c.kind==='vid');
+  if (hasVid) {
     $('recBanner').style.display='block';
     const out = await exportVideoSlide(s);
     $('recBanner').style.display='none';
@@ -626,7 +849,7 @@ function showResult(items){
       ov.appendChild(img);
     } else {
       const vid = document.createElement('video');
-      vid.src = it.url; vid.controls = true; vid.playsInline = true;
+      vid.src = it.url; vid.controls = true; vid.playsInline = true; vid.muted = true;
       vid.style.cssText = 'width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);';
       ov.appendChild(vid);
       const a = document.createElement('a');

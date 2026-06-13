@@ -80,6 +80,12 @@
     color:#fff;font-size:3.1cqw;letter-spacing:.6px;pointer-events:none;
   }
   .post .footer .handle{font-weight:600}
+  .post .endhandle{
+    position:absolute;left:0;right:0;bottom:6%;text-align:center;
+    color:#fff;font-family:'Inter',sans-serif;font-weight:400;
+    font-size:3.4cqw;letter-spacing:.4px;text-shadow:0 1px 8px rgba(0,0,0,.6);
+    pointer-events:none;display:none;
+  }
   .post .circle{
     position:absolute;border-radius:50%;overflow:hidden;
     border:0.72cqw solid #fff;background:#333;
@@ -154,6 +160,7 @@
   button.smallghost:hover{color:#fff}
   button.primary:hover{filter:brightness(1.1)}
   .hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .divider{height:1px;background:var(--line);margin:2px 0}
   .recBanner{
     display:none;position:fixed;top:0;left:0;right:0;z-index:98;
     background:#b3261e;color:#fff;text-align:center;font-size:13px;font-weight:600;
@@ -182,6 +189,7 @@
     <span class="handle">@Millionaire.life.style</span>
     <span>Swipe for more</span>
   </div>
+  <div class="endhandle" id="endHandle">@Millionaire.life.style</div>
 </div>
 </div>
 
@@ -202,29 +210,9 @@
   </div>
 
   <div>
-    <label for="imgInput">Slide image or video</label>
+    <label for="imgInput">Slide image or video (background)</label>
     <input type="file" id="imgInput" accept="image/*,video/*">
   </div>
-
-  <div>
-    <label for="circAddInput">Add circle (photo or video)</label>
-    <input type="file" id="circAddInput" accept="image/*,video/*">
-  </div>
-  <div class="row">
-    <div>
-      <label for="circSizeRange">Circle size (selected)</label>
-      <input type="range" id="circSizeRange" min="15" max="60" value="33">
-    </div>
-    <div>
-      <label for="circZoomRange">Circle zoom (selected)</label>
-      <input type="range" id="circZoomRange" min="100" max="300" value="100">
-    </div>
-  </div>
-  <div class="row">
-    <div><button class="smallghost" id="circDelete">✕ Delete selected circle</button></div>
-    <div></div>
-  </div>
-
   <div class="row">
     <div>
       <label for="zoomRange">Background zoom</label>
@@ -266,6 +254,24 @@
     </div>
   </div>
 
+  <div class="divider"></div>
+
+  <div>
+    <label for="circAddInput">Add circle (photo or video)</label>
+    <input type="file" id="circAddInput" accept="image/*,video/*">
+  </div>
+  <div class="row">
+    <div>
+      <label for="circSizeRange">Circle size (selected)</label>
+      <input type="range" id="circSizeRange" min="15" max="60" value="33">
+    </div>
+    <div>
+      <label for="circZoomRange">Circle zoom (selected)</label>
+      <input type="range" id="circZoomRange" min="100" max="300" value="100">
+    </div>
+  </div>
+  <button class="smallghost" id="circDelete">✕ Delete selected circle</button>
+
   <div class="btnrow">
     <button class="primary" id="dlOne">Generate this slide</button>
     <button class="primary" id="dlAll">Generate all</button>
@@ -281,11 +287,13 @@ const $ = id => document.getElementById(id);
 // ---------- state ----------
 const newSlide = type => ({
   type,
-  text: type === 'cover' ? "INSERT TEXT HERE" : "Insert text here",
+  text: type === 'cover' ? "INSERT TEXT HERE"
+      : type === 'end' ? "IF YOU DON'T FOLLOW US RIGHT NOW YOU WILL NEVER SEE OUR PAGE AGAIN"
+      : "Insert text here",
   mediaKind: null,     // 'img' | 'vid'
   imgData: null,
   vidUrl: null,
-  size: type === 'cover' ? 34 : 25,
+  size: type === 'cover' ? 34 : type === 'end' ? 34 : 25,
   fade: 55,
   scrimOp: 1,
   zoom: 1,
@@ -310,7 +318,7 @@ function renderTabs(){
     const b = document.createElement('button');
     b.className = 'tab' + (i===cur?' active':'');
     const hasVid = s.mediaKind==='vid' || s.circles.some(c=>c.kind==='vid');
-    b.textContent = (i+1) + (s.type==='cover'?' · Cover':'') + (hasVid?' ▶':'');
+    b.textContent = (i+1) + (s.type==='cover'?' · Cover':'') + (s.type==='end'?' · End':'') + (hasVid?' ▶':'');
     b.onclick = ()=>{ cur=i; selCircle=-1; renderAll(); };
     t.appendChild(b);
   });
@@ -318,6 +326,10 @@ function renderTabs(){
   add.className = 'tab add'; add.textContent = '+ Add slide';
   add.onclick = ()=>{ slides.push(newSlide('content')); cur = slides.length-1; selCircle=-1; renderAll(); };
   t.appendChild(add);
+  const end = document.createElement('button');
+  end.className = 'tab add'; end.textContent = '+ End slide';
+  end.onclick = ()=>{ slides.push(newSlide('end')); cur = slides.length-1; selCircle=-1; renderAll(); };
+  t.appendChild(end);
 }
 
 function applyTransform(){
@@ -386,10 +398,15 @@ function renderPreview(){
   renderCircles();
 
   const isCover = s.type === 'cover';
-  $('headline').style.display = isCover ? 'block' : 'none';
-  $('caption').style.display  = isCover ? 'none'  : 'block';
+  const isEnd = s.type === 'end';
+  const isCapsStyle = isCover || isEnd;
+  $('headline').style.display = isCapsStyle ? 'block' : 'none';
+  $('caption').style.display  = isCapsStyle ? 'none'  : 'block';
   $('footerRow').style.display = isCover ? 'flex' : 'none';
-  if (isCover){
+  $('endHandle').style.display = isEnd ? 'block' : 'none';
+  // end slide headline sits a bit higher to make room for the centered handle
+  $('headline').style.bottom = isEnd ? '15%' : '11%';
+  if (isCapsStyle){
     $('headline').textContent = s.text;
     $('headline').style.fontSize = (s.size/4.2) + 'cqw';
   } else {
@@ -414,8 +431,8 @@ function renderControls(){
 function renderAll(){ renderTabs(); renderControls(); renderPreview(); }
 
 // ---------- events ----------
-$('typeCover').onclick = ()=>{ const s=slides[cur]; if(s.type!=='cover'){ s.type='cover'; s.size=34; if(s.text==='Insert text here') s.text='INSERT TEXT HERE'; } renderAll(); };
-$('typeContent').onclick = ()=>{ const s=slides[cur]; if(s.type!=='content'){ s.type='content'; s.size=25; if(s.text==='INSERT TEXT HERE') s.text='Insert text here'; } renderAll(); };
+$('typeCover').onclick = ()=>{ const s=slides[cur]; if(s.type!=='cover'){ const wasPreset=(s.text==='Insert text here'||s.text==="IF YOU DON'T FOLLOW US RIGHT NOW YOU WILL NEVER SEE OUR PAGE AGAIN"); s.type='cover'; s.size=34; if(wasPreset) s.text='INSERT TEXT HERE'; } renderAll(); };
+$('typeContent').onclick = ()=>{ const s=slides[cur]; if(s.type!=='content'){ const wasPreset=(s.text==='INSERT TEXT HERE'||s.text==="IF YOU DON'T FOLLOW US RIGHT NOW YOU WILL NEVER SEE OUR PAGE AGAIN"); s.type='content'; s.size=25; if(wasPreset) s.text='Insert text here'; } renderAll(); };
 $('textInput').addEventListener('input', e=>{ slides[cur].text = e.target.value; renderPreview(); });
 $('sizeRange').addEventListener('input', e=>{ slides[cur].size = +e.target.value; renderPreview(); });
 $('fadeRange').addEventListener('input', e=>{ slides[cur].fade = +e.target.value; renderPreview(); });
@@ -617,21 +634,29 @@ function drawOverlay(ctx, s, W, H){
   ctx.fillStyle='#fff';
   ctx.shadowColor='rgba(0,0,0,.6)';
 
-  if (s.type==='cover'){
+  if (s.type==='cover' || s.type==='end'){
     const fontPx = s.size*scale;
     ctx.font=`400 ${fontPx}px Anton`;
     ctx.textAlign='center'; ctx.textBaseline='alphabetic';
     ctx.shadowBlur=18; ctx.shadowOffsetY=4;
     const lines = wrapLines(ctx, s.text.toUpperCase(), W*0.9);
-    const lineH=fontPx*1.12, bottomY=H*0.89;
+    const lineH=fontPx*1.12;
+    const bottomY = s.type==='end' ? H*0.85 : H*0.89;
     let y=bottomY-(lines.length-1)*lineH;
     lines.forEach(l=>{ ctx.fillText(l,W/2,y); y+=lineH; });
 
     ctx.shadowBlur=0; ctx.shadowOffsetY=0;
-    ctx.font=`600 ${13*scale*0.9}px Inter`; ctx.textAlign='left';
-    ctx.fillText($('handleInput').value, W*0.05, H*0.975);
-    ctx.font=`400 ${13*scale*0.9}px Inter`; ctx.textAlign='right';
-    ctx.fillText($('swipeInput').value, W*0.95, H*0.975);
+    if (s.type==='end'){
+      ctx.font=`400 ${14.3*scale*0.9}px Inter`; ctx.textAlign='center';
+      ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=8;
+      ctx.fillText('@Millionaire.life.style', W/2, H*0.945);
+      ctx.shadowBlur=0;
+    } else {
+      ctx.font=`600 ${13*scale*0.9}px Inter`; ctx.textAlign='left';
+      ctx.fillText($('handleInput').value, W*0.05, H*0.975);
+      ctx.font=`400 ${13*scale*0.9}px Inter`; ctx.textAlign='right';
+      ctx.fillText($('swipeInput').value, W*0.95, H*0.975);
+    }
   } else {
     const fontPx = s.size*scale;
     ctx.font=`400 ${fontPx}px Inter`;

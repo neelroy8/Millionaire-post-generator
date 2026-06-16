@@ -270,6 +270,19 @@
     </select>
   </div>
 
+  <div>
+    <label>Text edge effect</label>
+    <div class="seg" id="effectSeg">
+      <button data-e="none">None</button>
+      <button data-e="outline">Outline</button>
+      <button data-e="shadow">Shadow</button>
+    </div>
+  </div>
+  <div class="colorRow" id="strokeRow" style="display:none">
+    <input type="color" id="strokeColorPick" value="#000000">
+    <span style="font-size:12px;color:var(--muted)">outline color</span>
+  </div>
+
   <div class="divider"></div>
   <div class="secLabel">Background</div>
   <div>
@@ -467,6 +480,8 @@ function newSlide(type){
     runs: null,           // optional [{text,color}] for per-word colors; null = solid color
     color: '#ffffff',
     footerColor: '#ffffff',
+    textEffect: 'shadow',   // 'none' | 'outline' | 'shadow'
+    strokeColor: '#000000',
     align: type==='content' ? contentDefaults.align : 'center',
     font: type==='content' ? contentDefaults.font : 'Anton',
     mediaKind: null, imgData: null, vidUrl: null,
@@ -628,7 +643,21 @@ function renderPreview(){
   target.style.fontFamily = `'${s.font}', sans-serif`;
   if (!s.runs) target.style.color = s.color;
   else target.style.color = '';
-  // caption uppercase only for caps styles via font choice; keep natural case otherwise
+  // text edge effect
+  const eff = s.textEffect || 'shadow';
+  const stroke = s.strokeColor || '#000000';
+  if (eff==='none'){
+    target.style.textShadow='none';
+    target.style.webkitTextStroke='0';
+  } else if (eff==='outline'){
+    const ow = (s.size/4.2)*0.07; // outline scales with text size
+    target.style.textShadow='none';
+    target.style.webkitTextStroke = ow+'cqw '+stroke;
+    target.style.paintOrder='stroke fill';
+  } else {
+    target.style.webkitTextStroke='0';
+    target.style.textShadow = isCaps ? '0 2px 10px rgba(0,0,0,.6)' : '0 1px 8px rgba(0,0,0,.55)';
+  }
   hEl.style.textTransform = (s.font==='Inter'||s.font==='Montserrat') ? 'uppercase' : 'uppercase';
 }
 
@@ -646,6 +675,9 @@ function renderControls(){
   $('zoomRange').value = Math.round(s.zoom*100);
   $('fontSelect').value = s.font;
   [...$('alignSeg').children].forEach(b=>b.classList.toggle('on', b.dataset.a===s.align));
+  [...$('effectSeg').children].forEach(b=>b.classList.toggle('on', b.dataset.e===(s.textEffect||'shadow')));
+  $('strokeColorPick').value = s.strokeColor || '#000000';
+  $('strokeRow').style.display = (s.textEffect==='outline') ? 'flex' : 'none';
   $('wmPos').value = watermark.pos;
   $('wmSize').value = watermark.size;
   $('imgInput').value=''; $('circAddInput').value=''; $('wmInput').value='';
@@ -792,6 +824,8 @@ $('zoomRange').addEventListener('input', e=>{ slides[cur].zoom=+e.target.value/1
 $('resetPos').onclick=()=>{ const s=slides[cur]; s.zoom=1; s.offX=0; s.offY=0; renderControls(); applyTransform(); };
 $('fontSelect').addEventListener('change', e=>{ slides[cur].font=e.target.value; renderPreview(); });
 [...$('alignSeg').children].forEach(b=> b.onclick=()=>{ slides[cur].align=b.dataset.a; renderControls(); renderPreview(); });
+[...$('effectSeg').children].forEach(b=> b.onclick=()=>{ slides[cur].textEffect=b.dataset.e; renderControls(); renderPreview(); });
+$('strokeColorPick').addEventListener('input', e=>{ slides[cur].strokeColor=e.target.value; renderPreview(); });
 
 $('applyAll').onclick=()=>{
   const s=slides[cur];
@@ -982,14 +1016,18 @@ function wrapRuns(ctx, runs, maxW){
   });
 }
 function lineWidth(ctx,line){ return line.reduce((w,t)=>w+ctx.measureText(t.text).width,0); }
-function drawRunLine(ctx,line,cx,y,align,W,leftPad){
+function drawRunLine(ctx,line,cx,y,align,W,leftPad,stroke){
   const total=lineWidth(ctx,line);
   let x;
   if(align==='center') x=cx-total/2;
   else if(align==='right') x=W-leftPad-total;
   else x=leftPad;
   ctx.textAlign='left';
-  line.forEach(t=>{ ctx.fillStyle=t.color; ctx.fillText(t.text,x,y); x+=ctx.measureText(t.text).width; });
+  line.forEach(t=>{
+    if(stroke){ ctx.strokeText(t.text,x,y); }
+    ctx.fillStyle=t.color; ctx.fillText(t.text,x,y);
+    x+=ctx.measureText(t.text).width;
+  });
 }
 
 function runsFor(s){
@@ -1014,7 +1052,19 @@ function drawOverlay(ctx, s, W, H){
   const transform = isCaps;
   ctx.font=`${weight} ${fontPx}px ${family}`;
   ctx.textBaseline='alphabetic';
-  ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=isCaps?18:12; ctx.shadowOffsetY=isCaps?4:2;
+  const eff = s.textEffect || 'shadow';
+  let useStroke=false;
+  if(eff==='shadow'){
+    ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=isCaps?18:12; ctx.shadowOffsetY=isCaps?4:2;
+  } else if(eff==='outline'){
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+    ctx.strokeStyle=s.strokeColor||'#000000';
+    ctx.lineWidth=Math.max(2, fontPx*0.07);
+    ctx.lineJoin='round'; ctx.miterLimit=2;
+    useStroke=true;
+  } else {
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  }
 
   let runs=runsFor(s);
   if(transform) runs=runs.map(r=>({text:r.text.toUpperCase(), color:r.color}));
@@ -1025,7 +1075,7 @@ function drawOverlay(ctx, s, W, H){
   const lineH=fontPx*(isCaps?1.12:1.28);
   const bottomY = s.type==='end'?H*0.85 : isCaps?H*0.89 : H*0.915;
   let y=bottomY-(lines.length-1)*lineH;
-  lines.forEach(line=>{ drawRunLine(ctx,line,W/2,y,s.align,W,leftPad); y+=lineH; });
+  lines.forEach(line=>{ drawRunLine(ctx,line,W/2,y,s.align,W,leftPad,useStroke); y+=lineH; });
 
   // footer / end handle
   ctx.shadowBlur=0; ctx.shadowOffsetY=0;

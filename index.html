@@ -32,7 +32,7 @@
     container-type:inline-size;
     position:relative;width:min(420px,94vw);height:calc(min(420px,94vw)*1.25);
     background:#1c1c22;overflow:hidden;border-radius:6px;
-    box-shadow:0 12px 40px rgba(0,0,0,.55);
+    box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 0 0 4px rgba(88,101,242,.25), 0 12px 40px rgba(0,0,0,.55);
     touch-action:none;
     transition:width .25s ease, height .25s ease;
   }
@@ -42,7 +42,7 @@
   }
   .post img.bgimg, .post video.bgvid{
     position:absolute;top:0;left:0;width:100%;height:100%;
-    object-fit:contain;transform-origin:center center;
+    object-fit:cover;transform-origin:center center;
     user-select:none;-webkit-user-drag:none;pointer-events:none;
     display:none;background:#0e0e12;
   }
@@ -120,29 +120,32 @@
     padding:18px;width:min(440px,94vw);display:flex;flex-direction:column;gap:14px;
     margin-top:12px;
   }
-  label{font-size:11.5px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;display:block;margin-bottom:6px}
+  .controls > div, .controls > button{width:100%}
+  label{font-size:11.5px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;display:block;margin-bottom:6px;line-height:1.35}
   textarea,input[type=text],select{
     width:100%;background:#0d0d10;border:1px solid var(--line);border-radius:8px;
     color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;resize:vertical;
+    height:42px;
   }
-  textarea{min-height:78px}
+  textarea{min-height:78px;height:auto}
   textarea:focus,input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
   input[type=file]{
     width:100%;font-size:13px;color:var(--muted);
-    background:#0d0d10;border:1px dashed var(--line);border-radius:8px;padding:10px;
+    background:#0d0d10;border:1px dashed var(--line);border-radius:8px;padding:11px;
   }
   input[type=file]::file-selector-button{
     background:#23232c;color:#fff;border:1px solid var(--line);border-radius:6px;
     padding:7px 12px;margin-right:10px;font-family:'Inter',sans-serif;font-size:12.5px;cursor:pointer;
   }
-  .row{display:flex;gap:12px}
-  .row > div{flex:1;display:flex;flex-direction:column;justify-content:flex-end}
-  .row label{min-height:16px}
-  input[type=range]{width:100%;accent-color:var(--accent)}
+  .row{display:flex;gap:12px;align-items:stretch}
+  .row > div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+  .row label{min-height:31px;display:flex;align-items:flex-end}
+  input[type=range]{width:100%;accent-color:var(--accent);height:34px;margin:0}
   .typeBtns{display:flex;gap:8px}
   .typeBtns button, .seg button{
     flex:1;background:#0d0d10;border:1px solid var(--line);color:var(--muted);
-    border-radius:8px;padding:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;
+    border-radius:8px;padding:11px 6px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;
+    height:42px;
   }
   .typeBtns button.on, .seg button.on{border-color:var(--accent);color:#fff;background:#1c1c28}
   .seg{display:flex;gap:8px}
@@ -150,26 +153,27 @@
   .btnrow button{flex:1}
   button.primary{
     background:var(--accent);color:#fff;border:none;border-radius:8px;
-    font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:13px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:13px;cursor:pointer;height:46px;
   }
   button.danger{
     background:transparent;color:#ff7a7a;border:1px solid #ff7a7a;border-radius:8px;
-    font-family:'Inter',sans-serif;font-weight:600;font-size:13px;padding:12px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13px;padding:12px;cursor:pointer;height:44px;
   }
   button.smallghost{
     background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;
-    font-family:'Inter',sans-serif;font-size:12px;padding:9px;cursor:pointer;width:100%;
+    font-family:'Inter',sans-serif;font-size:12.5px;padding:0 10px;cursor:pointer;width:100%;height:42px;
+    display:flex;align-items:center;justify-content:center;text-align:center;
   }
   button.smallghost:hover{color:#fff}
   button.primary:hover{filter:brightness(1.1)}
-  .hint{font-size:11.5px;color:var(--muted);line-height:1.5}
-  .divider{height:1px;background:var(--line);margin:2px 0}
-  .secLabel{font-size:11px;color:var(--accent);letter-spacing:.6px;text-transform:uppercase;font-weight:600;margin-top:2px}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:2px}
+  .divider{height:1px;background:var(--line);margin:6px 0 2px}
+  .secLabel{font-size:11px;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;font-weight:600;margin:2px 0 -2px}
   .swatches{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .sw{width:30px;height:30px;border-radius:50%;border:2px solid #333;cursor:pointer;flex:0 0 auto}
   .sw.add{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:18px;background:#0d0d10}
-  .colorRow{display:flex;gap:8px;align-items:center}
-  .colorRow input[type=color]{width:42px;height:34px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10}
+  .colorRow{display:flex;gap:10px;align-items:center}
+  .colorRow input[type=color]{width:46px;height:42px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10;flex:0 0 auto}
   .recBanner{
     display:none;position:fixed;top:0;left:0;right:0;z-index:98;
     background:#b3261e;color:#fff;text-align:center;font-size:13px;font-weight:600;
@@ -210,6 +214,7 @@
     <label for="presetSelect">Style preset</label>
     <div class="row">
       <div style="flex:2">
+        <label>&nbsp;</label>
         <select id="presetSelect"></select>
       </div>
       <div style="flex:1">
@@ -219,7 +224,7 @@
     </div>
   </div>
   <div class="row">
-    <div><button class="smallghost" id="savePreset">+ Save current as preset</button></div>
+    <div><button class="smallghost" id="savePreset">+ Save preset</button></div>
     <div><button class="smallghost" id="deletePreset">✕ Delete preset</button></div>
   </div>
 
@@ -234,27 +239,19 @@
     </div>
   </div>
 
+  <div class="secLabel">Background</div>
   <div>
-    <label for="textInput">Slide text</label>
-    <textarea id="textInput"></textarea>
+    <label for="imgInput">Slide image or video (background)</label>
+    <input type="file" id="imgInput" accept="image/*,video/*">
   </div>
-
-  <div>
-    <label>Text color — select letters/words in the box first, then tap a color (or tap with nothing selected to color all)</label>
-    <div class="swatches" id="swatches"></div>
-  </div>
-  <div class="colorRow">
-    <input type="color" id="customColor" value="#e6c878">
-    <button class="smallghost" id="addSwatch" style="width:auto;padding:9px 14px">+ Add this color</button>
-    <button class="smallghost" id="clearColors" style="width:auto;padding:9px 14px">Reset text color</button>
-  </div>
-
-  <div>
-    <label>Text alignment</label>
-    <div class="seg" id="alignSeg">
-      <button data-a="left">Left</button>
-      <button data-a="center">Center</button>
-      <button data-a="right">Right</button>
+  <div class="row">
+    <div>
+      <label for="zoomRange">Background zoom (zoom out to see more)</label>
+      <input type="range" id="zoomRange" min="40" max="300" value="100">
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button class="smallghost" id="resetPos">Reset zoom &amp; position</button>
     </div>
   </div>
 
@@ -268,6 +265,32 @@
       <option value="Montserrat">Montserrat</option>
       <option value="Inter">Inter (clean)</option>
     </select>
+  </div>
+
+  <div class="divider"></div>
+
+  <div>
+    <label for="textInput">Slide text</label>
+    <textarea id="textInput"></textarea>
+  </div>
+
+  <div>
+    <label>Text color — select letters/words in the box first, then tap a color (or tap with nothing selected to color all)</label>
+    <div class="swatches" id="swatches"></div>
+  </div>
+  <div class="colorRow">
+    <input type="color" id="customColor" value="#e6c878">
+    <button class="smallghost" id="addSwatch" style="flex:1">+ Add color</button>
+    <button class="smallghost" id="clearColors" style="flex:1">Reset color</button>
+  </div>
+
+  <div>
+    <label>Text alignment</label>
+    <div class="seg" id="alignSeg">
+      <button data-a="left">Left</button>
+      <button data-a="center">Center</button>
+      <button data-a="right">Right</button>
+    </div>
   </div>
 
   <div>
@@ -284,22 +307,7 @@
   </div>
 
   <div class="divider"></div>
-  <div class="secLabel">Background</div>
-  <div>
-    <label for="imgInput">Slide image or video (background)</label>
-    <input type="file" id="imgInput" accept="image/*,video/*">
-  </div>
-  <div class="row">
-    <div>
-      <label for="zoomRange">Background zoom</label>
-      <input type="range" id="zoomRange" min="100" max="300" value="100">
-    </div>
-    <div>
-      <label>&nbsp;</label>
-      <button class="smallghost" id="resetPos">Reset zoom &amp; position</button>
-    </div>
-  </div>
-
+  <div class="secLabel">Text size &amp; fade</div>
   <div class="row">
     <div>
       <label for="sizeRange">Text size</label>
@@ -318,7 +326,7 @@
     </div>
     <div>
       <label for="fadeColor">Fade color</label>
-      <input type="color" id="fadeColor" value="#000000" style="width:100%;height:34px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10">
+      <input type="color" id="fadeColor" value="#000000" style="width:100%;height:42px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10">
     </div>
   </div>
   <div>
@@ -990,8 +998,8 @@ $('loadProj').addEventListener('change', e=>{
 // ---------- drawing helpers ----------
 function drawAdjusted(ctx,el,natW,natH,W,H,zoom,offX,offY){
   const ir=natW/natH, r=W/H; let dw,dh;
-  // contain-fit: whole media visible at zoom 1, then zoom fills
-  if(ir>r){ dw=W*zoom; dh=dw/ir; } else { dh=H*zoom; dw=dh*ir; }
+  // cover-fit: fills the frame at zoom 1, zoom out (<100%) reveals more of the image
+  if(ir>r){ dh=H*zoom; dw=dh*ir; } else { dw=W*zoom; dh=dw/ir; }
   ctx.drawImage(el,(W-dw)/2+offX*W,(H-dh)/2+offY*H,dw,dh);
 }
 function wrapRuns(ctx, runs, maxW){
@@ -1050,7 +1058,7 @@ function drawOverlay(ctx, s, W, H){
   const family=s.font;
   const weight = (family==='Inter')?'400':(family==='Montserrat')?'700':'400';
   const transform = isCaps;
-  ctx.font=`${weight} ${fontPx}px ${family}`;
+  ctx.font=`${weight} ${fontPx}px "${family}"`;
   ctx.textBaseline='alphabetic';
   const eff = s.textEffect || 'shadow';
   let useStroke=false;
@@ -1134,9 +1142,24 @@ async function preloadCircles(s,primaryIsBg){
   return circs;
 }
 
+async function ensureFonts(family){
+  // load the actual fonts used so the export never falls back to a default
+  const targets = [
+    `400 90px "${family}"`,
+    `700 90px "${family}"`,
+    `400 60px Inter`,
+    `600 30px Inter`
+  ];
+  try{
+    await Promise.all(targets.map(t=>document.fonts.load(t)));
+    await document.fonts.ready;
+  }catch(e){}
+  // tiny extra wait so the just-loaded font is registered before drawing
+  await new Promise(r=>setTimeout(r,60));
+}
+
 async function exportImageSlide(s){
-  await document.fonts.load(`400 90px ${s.font}`);
-  await document.fonts.load('400 60px Inter'); await document.fonts.load('600 30px Inter');
+  await ensureFonts(s.font);
   const W=1080,H=1350; const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d'); ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
   if(s.imgData){ const img=await loadImg(s.imgData); if(img) drawAdjusted(ctx,img,img.width,img.height,W,H,s.zoom,s.offX,s.offY); }
@@ -1148,8 +1171,7 @@ async function exportImageSlide(s){
 
 function exportVideoSlide(s){
   return new Promise(async(resolve)=>{
-    await document.fonts.load(`400 90px ${s.font}`);
-    await document.fonts.load('400 60px Inter'); await document.fonts.load('600 30px Inter');
+    await ensureFonts(s.font);
     const W=1080,H=1350; const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
     const ctx=cv.getContext('2d');
     const bgIsVid=s.mediaKind==='vid'; let bgEl=null,bgImgEl=null;

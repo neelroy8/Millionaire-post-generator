@@ -173,6 +173,7 @@
     display:flex;align-items:center;justify-content:center;text-align:center;
   }
   button.smallghost:hover{color:#fff}
+  button.smallghost.on{border-color:var(--accent);color:#fff;background:#1c1c28}
   button.primary:hover{filter:brightness(1.1)}
   .hint{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:2px}
   .divider{height:1px;background:var(--line);margin:6px 0 2px}
@@ -478,7 +479,8 @@
   <button class="smallghost" id="circDelete">✕ Delete selected circle</button>
 
   <div class="divider"></div>
-  <div class="secLabel">Watermark / Logo (all slides)</div>
+  <div class="secLabel">Watermark / Logo</div>
+  <button class="smallghost" id="wmShowSlide" style="margin-bottom:2px">Show logo/line on THIS slide</button>
   <div>
     <label for="wmInput">Upload logo (PNG with transparency works best)</label>
     <input type="file" id="wmInput" accept="image/*">
@@ -648,7 +650,8 @@ function newSlide(type){
     scrimOp: type==='content' ? contentDefaults.scrimOp : 1,
     fadeHex: type==='content' ? contentDefaults.fadeHex : '#000000',
     zoom: 1, offX: 0, offY: 0,
-    circles: []
+    circles: [],
+    showWm: false        // per-slide: show the logo/line on this slide
   };
   return base;
 }
@@ -764,7 +767,10 @@ function defaultWmXY(){
 function placeWatermark(){
   const wm = $('watermark');
   const lineL = $('wmlineL'), lineR = $('wmlineR');
-  const hasLogo = !!watermark.src;
+  const slideOn = !!slides[cur].showWm;
+  const hasLogo = !!watermark.src && slideOn;
+  // if this slide doesn't show the watermark, hide logo + line entirely
+  if(!slideOn){ wm.style.display='none'; lineL.style.display='none'; lineR.style.display='none'; return; }
   wm.style.display = hasLogo ? 'block' : 'none';
   if (hasLogo){
     wm.src = watermark.src;
@@ -943,6 +949,7 @@ function renderControls(){
   $('wmPos').value = watermark.pos;
   $('wmSize').value = watermark.size;
   $('wmOpacity').value = Math.round((watermark.opacity==null?1:watermark.opacity)*100);
+  $('wmShowSlide').classList.toggle('on', !!slides[cur].showWm);
   $('wmAnchor').classList.toggle('on', !!watermark.anchorText);
   $('wmLine').classList.toggle('on', !!watermark.line);
   $('lineControls').style.display = watermark.line ? 'block' : 'none';
@@ -1149,6 +1156,7 @@ $('wmPos').addEventListener('change', e=>{ watermark.pos=e.target.value; const d
 $('wmSize').addEventListener('input', e=>{ watermark.size=+e.target.value; persistWatermark(); renderPreview(); });
 $('wmOpacity').addEventListener('input', e=>{ watermark.opacity=+e.target.value/100; persistWatermark(); renderPreview(); });
 $('wmClear').onclick=()=>{ watermark.src=null; wmSelected=false; $('wmInput').value=''; persistWatermark(); renderPreview(); };
+$('wmShowSlide').onclick=()=>{ slides[cur].showWm=!slides[cur].showWm; renderControls(); renderPreview(); };
 $('wmAnchor').onclick=()=>{ watermark.anchorText=!watermark.anchorText; persistWatermark(); renderControls(); renderPreview(); };
 $('wmLine').onclick=()=>{ watermark.line=!watermark.line; persistWatermark(); renderControls(); renderPreview(); };
 $('lineStyle').addEventListener('change', e=>{ watermark.lineStyle=e.target.value; persistWatermark(); renderPreview(); });
@@ -1228,7 +1236,7 @@ $('loadProj').addEventListener('change', e=>{
   const post=$('post');
   let dragging=false, dragCircle=-1, dragWm=false, sx=0, sy=0, ox=0, oy=0;
   function hitWatermark(fx,fy){
-    if(!watermark.src) return false;
+    if(!watermark.src || !slides[cur].showWm) return false;
     const wm=$('watermark'); const pr=post.getBoundingClientRect(); const wr=wm.getBoundingClientRect();
     const wx=(wr.left-pr.left)/pr.width, wy=(wr.top-pr.top)/pr.height;
     const ww=wr.width/pr.width, wh=wr.height/pr.height;
@@ -1529,7 +1537,7 @@ async function exportImageSlide(s){
   if(s.imgData){ const img=await loadImg(s.imgData); if(img) drawAdjusted(ctx,img,img.width,img.height,W,H,s.zoom,s.offX,s.offY); }
   drawOverlay(ctx,s,W,H);
   const circs=await preloadCircles(s,true); drawCircles(ctx,circs,W,H);
-  { const wm = watermark.src ? await loadImg(watermark.src) : null; drawWatermark(ctx,wm,W,H); }
+  { const wm = (s.showWm && watermark.src) ? await loadImg(watermark.src) : null; if(s.showWm) drawWatermark(ctx,wm,W,H); }
   return { kind:'img', url: cv.toDataURL('image/png') };
 }
 
@@ -1545,7 +1553,7 @@ function exportVideoSlide(s){
     const circleVids=circs.filter(c=>c.kind==='vid'&&c.el);
     const primary=bgIsVid?bgEl:(circleVids.find(c=>c.isPrimary)||{}).el;
     if(!primary){ alert('No playable video found.'); resolve(null); return; }
-    const wmImg = watermark.src ? await loadImg(watermark.src) : null;
+    const wmImg = (s.showWm && watermark.src) ? await loadImg(watermark.src) : null;
     let stream; try{ stream=cv.captureStream(30); }catch(e){ try{ stream=cv.captureStream(); }catch(e2){ stream=null; } }
     if(!stream){ alert('This browser cannot record from a canvas. Try Safari or Chrome.'); resolve(null); return; }
     let mime=''; if(window.MediaRecorder){ for(const c of ['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm']) if(MediaRecorder.isTypeSupported(c)){ mime=c; break; } }
@@ -1562,7 +1570,7 @@ function exportVideoSlide(s){
       if(!running) return;
       ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
       try{ if(bgEl) drawAdjusted(ctx,bgEl,bgEl.videoWidth,bgEl.videoHeight,W,H,s.zoom,s.offX,s.offY); else if(bgImgEl) drawAdjusted(ctx,bgImgEl,bgImgEl.width,bgImgEl.height,W,H,s.zoom,s.offX,s.offY); }catch(e){}
-      drawOverlay(ctx,s,W,H); drawCircles(ctx,circs,W,H); drawWatermark(ctx,wmImg,W,H);
+      drawOverlay(ctx,s,W,H); drawCircles(ctx,circs,W,H); if(s.showWm) drawWatermark(ctx,wmImg,W,H);
       requestAnimationFrame(draw);
     }
     primary.onended=()=>{ running=false; setTimeout(()=>{ try{rec.stop();}catch(e){} },300); };

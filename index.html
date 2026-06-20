@@ -188,19 +188,19 @@
     padding:10px;letter-spacing:.3px;
   }
 
-  /* ---------- desktop two-column layout ---------- */
-  .layout{ width:100%; display:block; }
-  .leftCol{ width:100%; display:block; }
-  .rightCol{ width:100%; display:flex; flex-direction:column; align-items:center; }
+  /* ---------- layout: wrappers vanish on mobile (restores sticky), columns on desktop ---------- */
+  .layout{ display:contents; }
+  .leftCol{ display:contents; }
+  .rightCol{ display:contents; }
 
   @media (min-width: 920px){
-    body{ padding:28px 28px 60px; }
+    body{ padding:28px 28px 60px; display:block; }
     .layout{
       display:flex; flex-direction:row; align-items:flex-start; justify-content:center;
       gap:36px; max-width:1180px; margin:0 auto;
     }
     .leftCol{
-      width:auto; display:block; position:sticky; top:24px; flex:0 0 auto;
+      display:block; width:auto; position:sticky; top:24px; flex:0 0 auto;
       align-self:flex-start;
     }
     .previewWrap{ position:static; }
@@ -211,7 +211,8 @@
       width:min(480px,42vw); height:calc(min(480px,42vw)*1.25);
     }
     .rightCol{
-      width:auto; flex:1 1 460px; max-width:480px; align-items:stretch;
+      display:flex; flex-direction:column; align-items:stretch;
+      width:auto; flex:1 1 460px; max-width:480px;
     }
     .tabs{ justify-content:flex-start; max-width:none; margin-top:0; }
     .controls{ width:100%; max-width:none; }

@@ -188,6 +188,37 @@
     padding:10px;letter-spacing:.3px;
   }
 
+  /* ---------- theme toggle ---------- */
+  .themeToggle{
+    position:fixed;top:12px;right:12px;z-index:97;
+    width:62px;height:32px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel);cursor:pointer;display:flex;align-items:center;
+    padding:3px;transition:background .2s;
+  }
+  .themeToggle .knob{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--accent);display:flex;align-items:center;justify-content:center;
+    font-size:15px;transition:transform .22s ease;transform:translateX(0);
+  }
+  body.light .themeToggle .knob{ transform:translateX(30px); }
+  .themeToggle .track-ic{
+    position:absolute;font-size:12px;opacity:.6;pointer-events:none;
+  }
+
+  /* light theme overrides */
+  body.light{
+    --bg:#f4f4f6; --panel:#ffffff; --line:#dcdce2;
+    --text:#1a1a1f; --muted:#6a6a73;
+  }
+  body.light input[type=range]{ accent-color:var(--accent); }
+  body.light textarea, body.light input[type=text], body.light select,
+  body.light input[type=file]{ background:#f0f0f3; }
+  body.light input[type=file]::file-selector-button{ background:#e7e7ec; color:#1a1a1f; }
+  body.light .typeBtns button, body.light .seg button,
+  body.light button.smallghost{ background:#f0f0f3; }
+  body.light .typeBtns button.on, body.light .seg button.on{ background:#e6e8ff; }
+  body.light .colorRow input[type=color], body.light #fadeColor{ background:#f0f0f3; }
+
   /* ---------- layout: wrappers vanish on mobile (restores sticky), columns on desktop ---------- */
   .layout{ display:contents; }
   .leftCol{ display:contents; }
@@ -226,6 +257,10 @@
 <body>
 
 <div class="recBanner" id="recBanner">Rendering video… keep this page open</div>
+
+<button class="themeToggle" id="themeToggle" title="Toggle light / dark">
+  <span class="knob" id="themeKnob">🌙</span>
+</button>
 
 <h1>Carousel Template</h1>
 <div class="sub">Cover · Content · End slides &nbsp;•&nbsp; photos &amp; videos &nbsp;•&nbsp; colors, fonts, watermark</div>
@@ -330,6 +365,27 @@
     <input type="color" id="customColor" value="#e6c878">
     <button class="smallghost" id="addSwatch" style="flex:1">+ Add color</button>
     <button class="smallghost" id="clearColors" style="flex:1">Reset color</button>
+  </div>
+
+  <div class="seg" id="colorModeSeg">
+    <button data-m="solid" style="flex:1">Solid color</button>
+    <button data-m="gradient" style="flex:1">Gradient</button>
+  </div>
+  <div id="gradControls" style="display:none">
+    <div class="row">
+      <div>
+        <label for="gradFrom">Gradient color 1</label>
+        <input type="color" id="gradFrom" value="#e6c878" style="width:100%;height:42px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10">
+      </div>
+      <div>
+        <label for="gradTo">Gradient color 2</label>
+        <input type="color" id="gradTo" value="#ffffff" style="width:100%;height:42px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10">
+      </div>
+    </div>
+    <div>
+      <label for="gradAngle">Gradient direction</label>
+      <input type="range" id="gradAngle" min="0" max="360" value="0">
+    </div>
   </div>
 
   <div>
@@ -458,7 +514,29 @@
     <button id="wmAnchor" style="flex:1">Anchor above text</button>
     <button id="wmLine" style="flex:1">Divider line</button>
   </div>
-  <div class="hint" style="margin-top:0">Tap "Anchor above text" to lock the logo above your headline — it follows the text size and position. Add a "Divider line" for the header look. Or just drag the logo anywhere on the preview.</div>
+  <div id="lineControls" style="display:none">
+    <div>
+      <label for="lineStyle">Line style</label>
+      <select id="lineStyle">
+        <option value="solid">Solid</option>
+        <option value="fade">Fade to logo</option>
+        <option value="dashed">Dashed</option>
+        <option value="dotted">Dotted</option>
+        <option value="double">Double</option>
+      </select>
+    </div>
+    <div class="row">
+      <div>
+        <label for="lineThick">Line thickness</label>
+        <input type="range" id="lineThick" min="1" max="10" value="2">
+      </div>
+      <div>
+        <label for="lineColor">Line color</label>
+        <input type="color" id="lineColor" value="#ffffff" style="width:100%;height:42px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10">
+      </div>
+    </div>
+  </div>
+  <div class="hint" style="margin-top:0">Tap "Anchor above text" to lock the logo above your headline — it follows the text. Add a "Divider line" for the header look, with its own style, thickness &amp; color. Or just drag the logo anywhere on the preview.</div>
 
   <div class="divider"></div>
   <div class="secLabel">Eyedropper — grab a color from any image</div>
@@ -467,6 +545,11 @@
     <input type="file" id="eyeInput" accept="image/*">
   </div>
   <canvas id="eyeCanvas" style="display:none;width:100%;border-radius:8px;border:1px solid var(--line);cursor:crosshair"></canvas>
+  <div class="colorRow" id="eyeResult" style="display:none">
+    <span id="eyeChip" style="width:42px;height:42px;border-radius:8px;border:1px solid var(--line);flex:0 0 auto;display:inline-block"></span>
+    <span id="eyeHex" style="font-size:13px;color:var(--text);font-weight:600"></span>
+    <span style="font-size:12px;color:var(--muted)">added to palette</span>
+  </div>
 
   <div class="divider"></div>
   <div class="btnrow">
@@ -533,7 +616,8 @@ function persistPalette(){
 }
 
 // ---------- watermark (shared across slides) ----------
-let watermark = { src:null, pos:'br', size:20, x:null, y:null, opacity:1, anchorText:false, line:false };
+let watermark = { src:null, pos:'br', size:20, x:null, y:null, opacity:1, anchorText:false,
+                  line:false, lineStyle:'solid', lineThick:2, lineColor:'#ffffff', gap:5 };
 try{
   const savedW = JSON.parse(localStorage.getItem('mls_watermark')||'null');
   if(savedW && typeof savedW==='object') watermark = Object.assign(watermark, savedW);
@@ -551,6 +635,8 @@ function newSlide(type){
         : "Insert text here",
     runs: null,           // optional [{text,color}] for per-word colors; null = solid color
     color: '#ffffff',
+    colorMode: 'solid',           // 'solid' | 'gradient'
+    gradFrom: '#e6c878', gradTo:'#ffffff', gradAngle:0,
     footerColor: '#ffffff',
     textEffect: 'shadow',   // 'none' | 'outline' | 'shadow'
     strokeColor: '#000000',
@@ -678,12 +764,15 @@ function defaultWmXY(){
 function placeWatermark(){
   const wm = $('watermark');
   const lineL = $('wmlineL'), lineR = $('wmlineR');
-  if (!watermark.src){ wm.style.display='none'; lineL.style.display='none'; lineR.style.display='none'; return; }
-  wm.src = watermark.src;
-  wm.style.display='block';
-  wm.style.width = watermark.size + '%';
-  wm.style.height = 'auto';
-  wm.style.opacity = (watermark.opacity==null?1:watermark.opacity);
+  const hasLogo = !!watermark.src;
+  wm.style.display = hasLogo ? 'block' : 'none';
+  if (hasLogo){
+    wm.src = watermark.src;
+    wm.style.width = watermark.size + '%';
+    wm.style.height = 'auto';
+    wm.style.opacity = (watermark.opacity==null?1:watermark.opacity);
+  }
+  if (!hasLogo && !watermark.line){ lineL.style.display='none'; lineR.style.display='none'; return; }
 
   const s = slides[cur];
   if (watermark.anchorText){
@@ -692,29 +781,65 @@ function placeWatermark(){
     const textEl = isCaps ? $('headline') : $('caption');
     const pr=post.getBoundingClientRect();
     const tr=textEl.getBoundingClientRect();
+    const wmH = hasLogo ? (($('watermark').getBoundingClientRect().height)/pr.height || 0.1) : 0.04;
     const cx = ((tr.left+tr.right)/2 - pr.left)/pr.width;
-    const gap = 0.03;
-    const topY = (tr.top - pr.top)/pr.height - gap;
-    watermark.x = cx; watermark.y = topY;
+    const baseGap = 0.025;
+    const topY = (tr.top - pr.top)/pr.height - baseGap - wmH/2;
+    watermark.x = cx; watermark.y = Math.max(wmH/2+0.02, topY);
   }
-  if (watermark.x==null||watermark.y==null){ const d=defaultWmXY(); watermark.x=d.x; watermark.y=d.y; }
-  wm.style.left = (watermark.x*100)+'%';
-  wm.style.top = (watermark.y*100)+'%';
-  wm.classList.toggle('sel', wmSelected);
+  if (watermark.x==null||watermark.y==null){
+    if(!hasLogo){ watermark.x=0.5; watermark.y=0.5; }
+    else { const d=defaultWmXY(); watermark.x=d.x; watermark.y=d.y; }
+  }
+  if(hasLogo){
+    wm.style.left = (watermark.x*100)+'%';
+    wm.style.top = (watermark.y*100)+'%';
+    wm.classList.toggle('sel', wmSelected);
+  }
 
   if (watermark.line){
-    const post=$('post'); const wr=wm.getBoundingClientRect(); const pr=post.getBoundingClientRect();
-    const cy=((wr.top+wr.bottom)/2 - pr.top)/pr.height;        // line height = logo center
-    const logoLeft=(wr.left-pr.left)/pr.width;
-    const logoRight=(wr.right-pr.left)/pr.width;
-    const pad=0.025; // gap between line and logo
-    lineL.style.display='block'; lineR.style.display='block';
+    const post=$('post'); const pr=post.getBoundingClientRect();
+    const th=(watermark.lineThick||2);
+    const col=watermark.lineColor||'#ffffff';
+    const st=watermark.lineStyle||'solid';
+    const opacity = (watermark.opacity==null?1:watermark.opacity);
+    let cy, leftW, rightStart;
+    if(hasLogo){
+      const wr=wm.getBoundingClientRect();
+      cy=((wr.top+wr.bottom)/2 - pr.top)/pr.height;
+      const logoLeft=(wr.left-pr.left)/pr.width;
+      const logoRight=(wr.right-pr.left)/pr.width;
+      const pad=0.025;
+      leftW=Math.max(0,(logoLeft-pad-0.05));
+      rightStart=logoRight+pad;
+    } else {
+      // no logo: one full line at watermark.y (or above text if anchored)
+      cy = watermark.y!=null ? watermark.y : 0.5;
+      leftW = 0.90; rightStart = null;  // single line 5%..95%
+    }
+    lineL.style.display='block';
     lineL.style.top=(cy*100)+'%';
-    lineR.style.top=(cy*100)+'%';
-    // left segment: from 5% to logoLeft-pad
-    lineL.style.width = Math.max(0,(logoLeft-pad-0.05))*100 + '%';
-    // right segment: from logoRight+pad to 95%
-    lineR.style.width = Math.max(0,(0.95-(logoRight+pad)))*100 + '%';
+    lineL.style.width=(leftW*100)+'%';
+    if(rightStart!=null){ lineR.style.display='block'; lineR.style.top=(cy*100)+'%'; lineR.style.width=Math.max(0,(0.95-rightStart))*100+'%'; }
+    else lineR.style.display='none';
+    [lineL,lineR].forEach((el)=>{
+      el.style.height = th+'px';
+      el.style.opacity = opacity;
+      el.style.background='none'; el.style.borderTop='none'; el.style.borderBottom='none'; el.style.boxShadow='0 1px 4px rgba(0,0,0,.4)';
+      if(st==='fade' && hasLogo){
+        const dir = el===lineL ? 'to right' : 'to left';
+        el.style.background = `linear-gradient(${dir}, ${col}, ${col} 70%, transparent)`;
+      } else if(st==='solid' || st==='fade'){
+        el.style.background=col;
+      } else if(st==='double'){
+        el.style.height=(th*3)+'px';
+        el.style.borderTop=th+'px solid '+col; el.style.borderBottom=th+'px solid '+col;
+        el.style.background='none';
+      } else { // dashed / dotted
+        el.style.borderTop=`${th}px ${st} ${col}`;
+        el.style.height='0px';
+      }
+    });
   } else { lineL.style.display='none'; lineR.style.display='none'; }
 }
 
@@ -761,8 +886,20 @@ function renderPreview(){
   target.style.fontSize = (s.size/4.2) + 'cqw';
   target.style.textAlign = s.align;
   target.style.fontFamily = `'${s.font}', sans-serif`;
-  if (!s.runs) target.style.color = s.color;
-  else target.style.color = '';
+  if (s.colorMode==='gradient' && !s.runs){
+    target.style.background = `linear-gradient(${s.gradAngle||0}deg, ${s.gradFrom}, ${s.gradTo})`;
+    target.style.webkitBackgroundClip='text';
+    target.style.backgroundClip='text';
+    target.style.color='transparent';
+    target.style.webkitTextFillColor='transparent';
+  } else {
+    target.style.background='none';
+    target.style.webkitBackgroundClip='border-box';
+    target.style.backgroundClip='border-box';
+    target.style.webkitTextFillColor='';
+    if (!s.runs) target.style.color = s.color;
+    else target.style.color = '';
+  }
   // text edge effect
   const eff = s.textEffect || 'shadow';
   const stroke = s.strokeColor || '#000000';
@@ -798,11 +935,20 @@ function renderControls(){
   [...$('effectSeg').children].forEach(b=>b.classList.toggle('on', b.dataset.e===(s.textEffect||'shadow')));
   $('strokeColorPick').value = s.strokeColor || '#000000';
   $('strokeRow').style.display = (s.textEffect==='outline') ? 'flex' : 'none';
+  [...$('colorModeSeg').children].forEach(b=>b.classList.toggle('on', b.dataset.m===(s.colorMode||'solid')));
+  $('gradControls').style.display = (s.colorMode==='gradient') ? 'block' : 'none';
+  $('gradFrom').value = s.gradFrom || '#e6c878';
+  $('gradTo').value = s.gradTo || '#ffffff';
+  $('gradAngle').value = s.gradAngle || 0;
   $('wmPos').value = watermark.pos;
   $('wmSize').value = watermark.size;
   $('wmOpacity').value = Math.round((watermark.opacity==null?1:watermark.opacity)*100);
   $('wmAnchor').classList.toggle('on', !!watermark.anchorText);
   $('wmLine').classList.toggle('on', !!watermark.line);
+  $('lineControls').style.display = watermark.line ? 'block' : 'none';
+  $('lineStyle').value = watermark.lineStyle || 'solid';
+  $('lineThick').value = watermark.lineThick || 2;
+  $('lineColor').value = watermark.lineColor || '#ffffff';
   $('imgInput').value=''; $('circAddInput').value=''; $('wmInput').value='';
   renderSwatches();
 }
@@ -949,6 +1095,10 @@ $('fontSelect').addEventListener('change', e=>{ slides[cur].font=e.target.value;
 [...$('alignSeg').children].forEach(b=> b.onclick=()=>{ slides[cur].align=b.dataset.a; renderControls(); renderPreview(); });
 [...$('effectSeg').children].forEach(b=> b.onclick=()=>{ slides[cur].textEffect=b.dataset.e; renderControls(); renderPreview(); });
 $('strokeColorPick').addEventListener('input', e=>{ slides[cur].strokeColor=e.target.value; renderPreview(); });
+[...$('colorModeSeg').children].forEach(b=> b.onclick=()=>{ slides[cur].colorMode=b.dataset.m; if(b.dataset.m==='gradient') slides[cur].runs=null; renderControls(); renderPreview(); });
+$('gradFrom').addEventListener('input', e=>{ slides[cur].gradFrom=e.target.value; renderPreview(); });
+$('gradTo').addEventListener('input', e=>{ slides[cur].gradTo=e.target.value; renderPreview(); });
+$('gradAngle').addEventListener('input', e=>{ slides[cur].gradAngle=+e.target.value; renderPreview(); });
 
 $('applyAll').onclick=()=>{
   const s=slides[cur];
@@ -1001,6 +1151,9 @@ $('wmOpacity').addEventListener('input', e=>{ watermark.opacity=+e.target.value/
 $('wmClear').onclick=()=>{ watermark.src=null; wmSelected=false; $('wmInput').value=''; persistWatermark(); renderPreview(); };
 $('wmAnchor').onclick=()=>{ watermark.anchorText=!watermark.anchorText; persistWatermark(); renderControls(); renderPreview(); };
 $('wmLine').onclick=()=>{ watermark.line=!watermark.line; persistWatermark(); renderControls(); renderPreview(); };
+$('lineStyle').addEventListener('change', e=>{ watermark.lineStyle=e.target.value; persistWatermark(); renderPreview(); });
+$('lineThick').addEventListener('input', e=>{ watermark.lineThick=+e.target.value; persistWatermark(); renderPreview(); });
+$('lineColor').addEventListener('input', e=>{ watermark.lineColor=e.target.value; persistWatermark(); renderPreview(); });
 
 // eyedropper
 $('eyeInput').addEventListener('change', e=>{
@@ -1029,6 +1182,10 @@ $('eyeCanvas').addEventListener('click', e=>{
   if(!palette.includes(hex)) palette.push(hex);
   persistPalette();
   renderSwatches();
+  // show the grabbed color clearly
+  $('eyeResult').style.display='flex';
+  $('eyeChip').style.background=hex;
+  $('eyeHex').textContent=hex.toUpperCase();
 });
 
 $('delSlide').onclick=()=>{
@@ -1171,7 +1328,7 @@ function wrapRuns(ctx, runs, maxW){
   });
 }
 function lineWidth(ctx,line){ return line.reduce((w,t)=>w+ctx.measureText(t.text).width,0); }
-function drawRunLine(ctx,line,cx,y,align,W,leftPad,stroke){
+function drawRunLine(ctx,line,cx,y,align,W,leftPad,stroke,gradFill){
   const total=lineWidth(ctx,line);
   let x;
   if(align==='center') x=cx-total/2;
@@ -1180,7 +1337,8 @@ function drawRunLine(ctx,line,cx,y,align,W,leftPad,stroke){
   ctx.textAlign='left';
   line.forEach(t=>{
     if(stroke){ ctx.strokeText(t.text,x,y); }
-    ctx.fillStyle=t.color; ctx.fillText(t.text,x,y);
+    ctx.fillStyle = gradFill ? gradFill : t.color;
+    ctx.fillText(t.text,x,y);
     x+=ctx.measureText(t.text).width;
   });
 }
@@ -1230,9 +1388,22 @@ function drawOverlay(ctx, s, W, H){
   const lineH=fontPx*(isCaps?1.12:1.28);
   const bottomY = s.type==='end'?H*0.85 : isCaps?H*0.89 : H*0.915;
   let y=bottomY-(lines.length-1)*lineH;
-  // record top of the text block (approx: first baseline minus cap height) for anchored watermark
   window.__textTopY = (y - fontPx) ;
-  lines.forEach(line=>{ drawRunLine(ctx,line,W/2,y,s.align,W,leftPad,useStroke); y+=lineH; });
+
+  // gradient fill across the whole text block (only when no per-word colors)
+  let gradFill=null;
+  if(s.colorMode==='gradient' && !(s.runs&&s.runs.length)){
+    const blockTop=y-fontPx, blockH=lines.length*lineH;
+    const ang=((s.gradAngle||0))*Math.PI/180;
+    const cxc=W/2, cyc=blockTop+blockH/2;
+    const len=Math.max(maxW,blockH)/2;
+    const x1=cxc-Math.cos(ang)*len, y1=cyc-Math.sin(ang)*len;
+    const x2=cxc+Math.cos(ang)*len, y2=cyc+Math.sin(ang)*len;
+    gradFill=ctx.createLinearGradient(x1,y1,x2,y2);
+    gradFill.addColorStop(0, s.gradFrom||'#e6c878');
+    gradFill.addColorStop(1, s.gradTo||'#ffffff');
+  }
+  lines.forEach(line=>{ drawRunLine(ctx,line,W/2,y,s.align,W,leftPad,useStroke,gradFill); y+=lineH; });
 
   // footer / end handle
   ctx.shadowBlur=0; ctx.shadowOffsetY=0;
@@ -1267,48 +1438,58 @@ function drawCircles(ctx,circs,W,H){
   });
 }
 function drawWatermark(ctx,wmImg,W,H){
-  if(!wmImg) return;
-  const w = W*(watermark.size/100);
-  const h = w * (wmImg.height/wmImg.width);
+  const hasLogo = !!wmImg;
+  if(!hasLogo && !watermark.line) return;
+  const w = hasLogo ? W*(watermark.size/100) : 0;
+  const h = hasLogo ? w * (wmImg.height/wmImg.width) : 0;
   let cx,cy;
   if(watermark.anchorText && window.__textTopY!=null){
     cx = W/2;
-    cy = window.__textTopY - H*0.03 - h/2;  // gap above text
+    cy = window.__textTopY - H*0.025 - h/2;
   } else if(watermark.x!=null && watermark.y!=null){
     cx=watermark.x*W; cy=watermark.y*H;
   } else { const d=defaultWmXY(); cx=d.x*W; cy=d.y*H; }
-  // divider line — two segments with a gap around the logo, fading toward it
+  // divider line — styles, thickness, color, gap around the logo (or full line if no logo)
   if(watermark.line){
     const op = (watermark.opacity==null?1:watermark.opacity);
     const ly = cy;
-    const lw = Math.max(2,W*0.0018);
-    const padX = w/2 + W*0.025;       // gap from logo center
-    const leftEnd = cx - padX, rightStart = cx + padX;
+    const lw = (watermark.lineThick||2) * (W/420);
+    const col = watermark.lineColor||'#ffffff';
+    const st = watermark.lineStyle||'solid';
+    const padX = hasLogo ? (w/2 + W*0.025) : 0;
+    const leftEnd = hasLogo ? cx - padX : W*0.95;
+    const rightStart = cx + padX;
     const x0 = W*0.05, x1 = W*0.95;
     ctx.save();
-    ctx.lineWidth=lw; ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=4; ctx.shadowOffsetY=1;
-    // left segment, fading toward the logo
-    if(leftEnd > x0){
-      const gL=ctx.createLinearGradient(x0,0,leftEnd,0);
-      gL.addColorStop(0,`rgba(255,255,255,${0.85*op})`);
-      gL.addColorStop(0.7,`rgba(255,255,255,${0.85*op})`);
-      gL.addColorStop(1,`rgba(255,255,255,0)`);
-      ctx.strokeStyle=gL; ctx.beginPath(); ctx.moveTo(x0,ly); ctx.lineTo(leftEnd,ly); ctx.stroke();
+    ctx.globalAlpha=op; ctx.lineWidth=lw; ctx.lineCap='butt';
+    ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=4; ctx.shadowOffsetY=1;
+    function seg(xa,xb,fade,fadeDir){
+      if(st==='dashed'){ ctx.setLineDash([lw*3, lw*2.2]); } 
+      else if(st==='dotted'){ ctx.setLineDash([lw*0.2, lw*2]); ctx.lineCap='round'; }
+      else ctx.setLineDash([]);
+      if(st==='fade' && fade){
+        const g=ctx.createLinearGradient(fadeDir==='r'?xa:xb,0,fadeDir==='r'?xb:xa,0);
+        g.addColorStop(0,col); g.addColorStop(0.7,col); g.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.strokeStyle=g;
+      } else ctx.strokeStyle=col;
+      if(st==='double'){
+        ctx.beginPath(); ctx.moveTo(xa,ly-lw); ctx.lineTo(xb,ly-lw); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(xa,ly+lw); ctx.lineTo(xb,ly+lw); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.moveTo(xa,ly); ctx.lineTo(xb,ly); ctx.stroke();
+      }
     }
-    // right segment
-    if(rightStart < x1){
-      const gR=ctx.createLinearGradient(x1,0,rightStart,0);
-      gR.addColorStop(0,`rgba(255,255,255,${0.85*op})`);
-      gR.addColorStop(0.7,`rgba(255,255,255,${0.85*op})`);
-      gR.addColorStop(1,`rgba(255,255,255,0)`);
-      ctx.strokeStyle=gR; ctx.beginPath(); ctx.moveTo(x1,ly); ctx.lineTo(rightStart,ly); ctx.stroke();
-    }
+    if(leftEnd>x0) seg(x0,leftEnd,true,'r');
+    if(hasLogo && rightStart<x1) seg(rightStart,x1,true,'l');
+    ctx.setLineDash([]);
     ctx.restore();
   }
-  ctx.save();
-  ctx.globalAlpha = (watermark.opacity==null?1:watermark.opacity);
-  ctx.drawImage(wmImg, cx-w/2, cy-h/2, w, h);
-  ctx.restore();
+  if(hasLogo){
+    ctx.save();
+    ctx.globalAlpha = (watermark.opacity==null?1:watermark.opacity);
+    ctx.drawImage(wmImg, cx-w/2, cy-h/2, w, h);
+    ctx.restore();
+  }
 }
 
 function loadImg(src){ return new Promise(res=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; }); }
@@ -1348,7 +1529,7 @@ async function exportImageSlide(s){
   if(s.imgData){ const img=await loadImg(s.imgData); if(img) drawAdjusted(ctx,img,img.width,img.height,W,H,s.zoom,s.offX,s.offY); }
   drawOverlay(ctx,s,W,H);
   const circs=await preloadCircles(s,true); drawCircles(ctx,circs,W,H);
-  if(watermark.src){ const wm=await loadImg(watermark.src); drawWatermark(ctx,wm,W,H); }
+  { const wm = watermark.src ? await loadImg(watermark.src) : null; drawWatermark(ctx,wm,W,H); }
   return { kind:'img', url: cv.toDataURL('image/png') };
 }
 
@@ -1401,7 +1582,28 @@ function showResult(items){
   let ov=document.getElementById('resultOverlay');
   if(!ov){ ov=document.createElement('div'); ov.id='resultOverlay'; ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99;overflow-y:auto;padding:18px 14px 40px;display:flex;flex-direction:column;align-items:center;gap:14px;'; document.body.appendChild(ov); }
   ov.innerHTML='';
-  const tip=document.createElement('div'); tip.style.cssText='color:#fff;font-size:14px;font-weight:600;text-align:center;line-height:1.5;'; tip.textContent='Photos: press and hold → Save to Photos.  Videos: tap the Download button.'; ov.appendChild(tip);
+  const tip=document.createElement('div'); tip.style.cssText='color:#fff;font-size:14px;font-weight:600;text-align:center;line-height:1.5;'; tip.textContent='Press and hold an image → Save to Photos. Or use the buttons below.'; ov.appendChild(tip);
+
+  // "Save all to Photos" via the share sheet (iPhone: choose Save to Photos / Save Images)
+  const imgItems = items.filter(it=>it && it.kind==='img');
+  if(imgItems.length>1 && navigator.canShare){
+    const saveAll=document.createElement('button');
+    saveAll.textContent='⬇ Save all '+imgItems.length+' to Photos';
+    saveAll.style.cssText='background:#37b24d;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:15px;padding:14px 30px;cursor:pointer;';
+    saveAll.onclick=async()=>{
+      try{
+        const files=[];
+        for(let i=0;i<imgItems.length;i++){
+          const blob=await (await fetch(imgItems[i].url)).blob();
+          files.push(new File([blob], 'slide-'+(i+1)+'.png', {type:'image/png'}));
+        }
+        if(navigator.canShare({files})){ await navigator.share({files}); }
+        else { alert('Your device cannot batch-save. Press and hold each image instead.'); }
+      }catch(err){ /* user cancelled or unsupported */ }
+    };
+    ov.appendChild(saveAll);
+  }
+
   items.forEach((it,i)=>{ if(!it) return;
     if(it.kind==='img'){ const img=document.createElement('img'); img.src=it.url; img.style.cssText='width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);'; ov.appendChild(img); }
     else { const vid=document.createElement('video'); vid.src=it.url; vid.controls=true; vid.playsInline=true; vid.muted=true; vid.style.cssText='width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);'; ov.appendChild(vid); const a=document.createElement('a'); a.href=it.url; a.download='slide-'+(i+1)+'.'+it.ext; a.textContent='⬇ Download video (slide '+(i+1)+')'; a.style.cssText='background:#5865f2;color:#fff;border-radius:8px;font-weight:600;font-size:14px;padding:12px 26px;text-decoration:none;'; ov.appendChild(a); }
@@ -1473,6 +1675,20 @@ $('deletePreset').onclick=()=>{
   if(name==="Millionaire Lifestyle (default)"){ alert("Can't delete the default preset."); return; }
   if(confirm('Delete preset "'+name+'"?')){ delete presets[name]; persistPresets(); renderPresetList(); }
 };
+
+// ---------- theme toggle ----------
+(function(){
+  const btn=$('themeToggle'), knob=$('themeKnob');
+  function setTheme(light){
+    document.body.classList.toggle('light', light);
+    knob.textContent = light ? '☀️' : '🌙';
+    try{ localStorage.setItem('mls_theme', light?'light':'dark'); }catch(e){}
+  }
+  let light=false;
+  try{ light = localStorage.getItem('mls_theme')==='light'; }catch(e){}
+  setTheme(light);
+  btn.onclick=()=>{ light=!light; setTheme(light); };
+})();
 
 renderPresetList();
 renderAll();

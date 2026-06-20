@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carousel Template Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&family=Bebas+Neue&family=Archivo+Black&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101013; --panel:#1a1a1f; --line:#2a2a31;
+    --text:#f2f2f4; --muted:#9a9aa3; --accent:#5865f2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    padding:20px 14px 70px;
+  }
+  h1{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(20px,4vw,28px);
+     text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  .sub{color:var(--muted);font-size:12.5px;margin-bottom:18px;text-align:center}
+
+  .previewWrap{
+    position:sticky;top:6px;z-index:50;
+    display:flex;justify-content:center;width:100%;
+    pointer-events:none;
+  }
+  .previewWrap .post{pointer-events:auto}
+  .post{
+    container-type:inline-size;
+    position:relative;width:min(420px,94vw);height:calc(min(420px,94vw)*1.25);
+    background:#1c1c22;overflow:hidden;border-radius:6px;
+    box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 0 0 4px rgba(88,101,242,.25), 0 12px 40px rgba(0,0,0,.55);
+    touch-action:none;
+    transition:width .25s ease, height .25s ease;
+  }
+  .previewWrap.mini .post{
+    width:min(230px,52vw);height:calc(min(230px,52vw)*1.25);
+    box-shadow:0 10px 34px rgba(0,0,0,.75);
+  }
+  .post img.bgimg, .post video.bgvid{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    object-fit:contain;transform-origin:center center;
+    user-select:none;-webkit-user-drag:none;pointer-events:none;
+    display:none;background:#0e0e12;
+  }
+  .post .noimg{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:#55555f;font-size:13px;letter-spacing:.4px;text-align:center;padding:0 20px;
+  }
+  .post .dragHint{
+    position:absolute;top:4%;left:5%;
+    background:rgba(0,0,0,.5);color:#fff;border-radius:999px;
+    padding:1.4cqw 2.9cqw;font-size:2.6cqw;font-weight:500;letter-spacing:.3px;
+    pointer-events:none;display:none;
+  }
+  .post .scrim{
+    position:absolute;left:0;right:0;bottom:0;height:55%;
+    pointer-events:none;
+  }
+  .post .headline{
+    position:absolute;left:5%;right:5%;bottom:11%;text-align:center;
+    font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;
+    color:#fff;letter-spacing:.5px;line-height:1.12;font-size:8.1cqw;
+    text-shadow:0 2px 10px rgba(0,0,0,.6);white-space:pre-wrap;pointer-events:none;
+  }
+  .post .caption{
+    position:absolute;left:5.5%;right:7%;bottom:8.5%;text-align:left;
+    font-family:'Inter',sans-serif;font-weight:400;color:#fff;
+    line-height:1.28;font-size:5.95cqw;letter-spacing:.1px;
+    text-shadow:0 1px 8px rgba(0,0,0,.55);white-space:pre-wrap;pointer-events:none;
+  }
+  .post .footer{
+    position:absolute;left:5%;right:5%;bottom:3.5%;
+    display:flex;justify-content:space-between;align-items:center;
+    color:#fff;font-size:3.1cqw;letter-spacing:.6px;pointer-events:none;
+  }
+  .post .footer .handle{font-weight:600}
+  .post .endhandle{
+    position:absolute;left:0;right:0;bottom:6%;text-align:center;
+    color:#fff;font-family:'Inter',sans-serif;font-weight:400;
+    font-size:3.4cqw;letter-spacing:.4px;text-shadow:0 1px 8px rgba(0,0,0,.6);
+    pointer-events:none;display:none;
+  }
+  .post .watermark{
+    position:absolute;pointer-events:none;display:none;
+    width:auto;height:auto;object-fit:contain;
+    transform:translate(-50%,-50%);
+  }
+  .post .watermark.sel{outline:2px dashed rgba(88,101,242,.9);outline-offset:3px}
+  .post .wmline{
+    position:absolute;height:2px;pointer-events:none;display:none;
+    transform:translateY(-50%);box-shadow:0 1px 4px rgba(0,0,0,.4);
+  }
+  .post .wmlineL{left:5%;background:linear-gradient(to right, rgba(255,255,255,.85), rgba(255,255,255,.85) 70%, rgba(255,255,255,0));}
+  .post .wmlineR{right:5%;background:linear-gradient(to left, rgba(255,255,255,.85), rgba(255,255,255,.85) 70%, rgba(255,255,255,0));}
+  .post .circle{
+    position:absolute;border-radius:50%;overflow:hidden;
+    border:0.72cqw solid #fff;background:#333;
+    box-shadow:0 6px 18px rgba(0,0,0,.45);pointer-events:none;
+    transform:translate(-50%,-50%);
+  }
+  .post .circle img, .post .circle video{
+    width:100%;height:100%;object-fit:cover;
+    transform-origin:center center;display:block;
+    pointer-events:none;user-select:none;-webkit-user-drag:none;
+  }
+  .post .circle.sel{border-color:#5865f2;box-shadow:0 0 0 3px rgba(88,101,242,.55),0 6px 18px rgba(0,0,0,.45)}
+  .post .pagecount{
+    position:absolute;top:4%;right:5%;
+    background:rgba(0,0,0,.5);color:#fff;border-radius:999px;
+    padding:1.4cqw 3.3cqw;font-size:3.1cqw;font-weight:500;pointer-events:none;
+  }
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:16px 0 4px;max-width:440px}
+  .tab{
+    background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:500;
+  }
+  .tab.active{border-color:var(--accent);color:#fff;background:#23232c}
+  .tab.add{border-style:dashed}
+  .tab:hover{color:#fff}
+
+  .controls{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:18px;width:min(440px,94vw);display:flex;flex-direction:column;gap:14px;
+    margin-top:12px;
+  }
+  .controls > div, .controls > button{width:100%}
+  label{font-size:11.5px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;display:block;margin-bottom:6px;line-height:1.35}
+  textarea,input[type=text],select{
+    width:100%;background:#0d0d10;border:1px solid var(--line);border-radius:8px;
+    color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:10px 12px;resize:vertical;
+    height:42px;
+  }
+  textarea{min-height:78px;height:auto}
+  textarea:focus,input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+  input[type=file]{
+    width:100%;font-size:13px;color:var(--muted);
+    background:#0d0d10;border:1px dashed var(--line);border-radius:8px;padding:11px;
+  }
+  input[type=file]::file-selector-button{
+    background:#23232c;color:#fff;border:1px solid var(--line);border-radius:6px;
+    padding:7px 12px;margin-right:10px;font-family:'Inter',sans-serif;font-size:12.5px;cursor:pointer;
+  }
+  .row{display:flex;gap:12px;align-items:stretch}
+  .row > div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+  .row label{min-height:31px;display:flex;align-items:flex-end}
+  input[type=range]{width:100%;accent-color:var(--accent);height:34px;margin:0}
+  .typeBtns{display:flex;gap:8px}
+  .typeBtns button, .seg button{
+    flex:1;background:#0d0d10;border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:11px 6px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;
+    height:42px;
+  }
+  .typeBtns button.on, .seg button.on{border-color:var(--accent);color:#fff;background:#1c1c28}
+  .seg{display:flex;gap:8px}
+  .btnrow{display:flex;gap:10px}
+  .btnrow button{flex:1}
+  button.primary{
+    background:var(--accent);color:#fff;border:none;border-radius:8px;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:13px;cursor:pointer;height:46px;
+  }
+  button.danger{
+    background:transparent;color:#ff7a7a;border:1px solid #ff7a7a;border-radius:8px;
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13px;padding:12px;cursor:pointer;height:44px;
+  }
+  button.smallghost{
+    background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;
+    font-family:'Inter',sans-serif;font-size:12.5px;padding:0 10px;cursor:pointer;width:100%;height:42px;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+  }
+  button.smallghost:hover{color:#fff}
+  button.primary:hover{filter:brightness(1.1)}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:2px}
+  .divider{height:1px;background:var(--line);margin:6px 0 2px}
+  .secLabel{font-size:11px;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;font-weight:600;margin:2px 0 -2px}
+  .swatches{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .sw{width:30px;height:30px;border-radius:50%;border:2px solid #333;cursor:pointer;flex:0 0 auto}
+  .sw.add{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:18px;background:#0d0d10}
+  .colorRow{display:flex;gap:10px;align-items:center}
+  .colorRow input[type=color]{width:46px;height:42px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10;flex:0 0 auto}
+  .recBanner{
+    display:none;position:fixed;top:0;left:0;right:0;z-index:98;
+    background:#b3261e;color:#fff;text-align:center;font-size:13px;font-weight:600;
+    padding:10px;letter-spacing:.3px;
+  }
+
+  /* ---------- desktop two-column layout ---------- */
+  .layout{ width:100%; display:flex; flex-direction:column; align-items:center; }
+  .leftCol{ width:100%; display:flex; flex-direction:column; align-items:center; }
+  .rightCol{ width:100%; display:flex; flex-direction:column; align-items:center; }
+
+  @media (min-width: 920px){
+    body{ padding:28px 28px 60px; }
+    .layout{
+      flex-direction:row; align-items:flex-start; justify-content:center;
+      gap:36px; max-width:1180px;
+    }
+    .leftCol{
+      width:auto; position:sticky; top:24px; flex:0 0 auto;
+      align-self:flex-start;
+    }
+    .previewWrap{ position:static; }
+    .previewWrap.mini .post{ /* ignore mobile shrink on desktop */
+      width:min(480px,42vw); height:calc(min(480px,42vw)*1.25);
+    }
+    .post{
+      width:min(480px,42vw); height:calc(min(480px,42vw)*1.25);
+    }
+    .rightCol{
+      width:auto; flex:1 1 460px; max-width:480px; align-items:stretch;
+    }
+    .tabs{ justify-content:flex-start; max-width:none; margin-top:0; }
+    .controls{ width:100%; max-width:none; }
+    h1{ text-align:center; }
+  }
+  @media (min-width: 1280px){
+    .post, .previewWrap.mini .post{ width:520px; height:650px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="recBanner" id="recBanner">Rendering video… keep this page open</div>
+
+<h1>Carousel Template</h1>
+<div class="sub">Cover · Content · End slides &nbsp;•&nbsp; photos &amp; videos &nbsp;•&nbsp; colors, fonts, watermark</div>
+
+<div class="layout" id="layout">
+<div class="leftCol" id="leftCol">
+<div class="previewWrap" id="previewWrap">
+<div class="post" id="post">
+  <div class="noimg" id="noimg">No image or video yet — choose one below</div>
+  <img class="bgimg" id="bgimg" alt="">
+  <video class="bgvid" id="bgvid" muted loop playsinline autoplay></video>
+  <div class="pagecount" id="pagecount">1/1</div>
+  <div class="dragHint" id="dragHint">Drag to reposition</div>
+  <div class="scrim" id="scrim"></div>
+  <div class="headline" id="headline"></div>
+  <div class="caption" id="caption"></div>
+  <div class="footer" id="footerRow">
+    <span class="handle">@Millionaire.life.style</span>
+    <span>Swipe for more</span>
+  </div>
+  <div class="endhandle" id="endHandle">@Millionaire.life.style</div>
+  <img class="watermark" id="watermark" alt="">
+  <div class="wmline wmlineL" id="wmlineL"></div>
+  <div class="wmline wmlineR" id="wmlineR"></div>
+</div>
+</div>
+</div><!-- /leftCol -->
+
+<div class="rightCol" id="rightCol">
+<div class="tabs" id="tabs"></div>
+
+<div class="controls">
+  <div>
+    <label for="presetSelect">Style preset</label>
+    <div class="row">
+      <div style="flex:2">
+        <label>&nbsp;</label>
+        <select id="presetSelect"></select>
+      </div>
+      <div style="flex:1">
+        <label>&nbsp;</label>
+        <button class="smallghost" id="applyPreset">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div><button class="smallghost" id="savePreset">+ Save preset</button></div>
+    <div><button class="smallghost" id="deletePreset">✕ Delete preset</button></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div>
+    <label>Slide type</label>
+    <div class="typeBtns">
+      <button id="typeCover">Cover</button>
+      <button id="typeContent">Content</button>
+      <button id="typeEnd">End</button>
+    </div>
+  </div>
+
+  <div class="secLabel">Background</div>
+  <div>
+    <label for="imgInput">Slide image or video (background)</label>
+    <input type="file" id="imgInput" accept="image/*,video/*">
+  </div>
+  <div class="row">
+    <div>
+      <label for="zoomRange">Background zoom (zoom out to see the whole image)</label>
+      <input type="range" id="zoomRange" min="15" max="300" value="100">
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button class="smallghost" id="resetPos">Reset zoom &amp; position</button>
+    </div>
+  </div>
+
+  <div>
+    <label for="fontSelect">Font</label>
+    <select id="fontSelect">
+      <option value="Anton">Anton (bold condensed)</option>
+      <option value="Bebas Neue">Bebas Neue</option>
+      <option value="Oswald">Oswald</option>
+      <option value="Archivo Black">Archivo Black</option>
+      <option value="Montserrat">Montserrat</option>
+      <option value="Inter">Inter (clean)</option>
+    </select>
+  </div>
+
+  <div class="divider"></div>
+
+  <div>
+    <label for="textInput">Slide text</label>
+    <textarea id="textInput"></textarea>
+  </div>
+
+  <div>
+    <label>Text color — select letters/words in the box first, then tap a color (or tap with nothing selected to color all)</label>
+    <div class="swatches" id="swatches"></div>
+  </div>
+  <div class="colorRow">
+    <input type="color" id="customColor" value="#e6c878">
+    <button class="smallghost" id="addSwatch" style="flex:1">+ Add color</button>
+    <button class="smallghost" id="clearColors" style="flex:1">Reset color</button>
+  </div>
+
+  <div>
+    <label>Text alignment</label>
+    <div class="seg" id="alignSeg">
+      <button data-a="left">Left</button>
+      <button data-a="center">Center</button>
+      <button data-a="right">Right</button>
+    </div>
+  </div>
+
+  <div>
+    <label>Text edge effect</label>
+    <div class="seg" id="effectSeg">
+      <button data-e="none">None</button>
+      <button data-e="outline">Outline</button>
+      <button data-e="shadow">Shadow</button>
+    </div>
+  </div>
+  <div class="colorRow" id="strokeRow" style="display:none">
+    <input type="color" id="strokeColorPick" value="#000000">
+    <span style="font-size:12px;color:var(--muted)">outline color</span>
+  </div>
+
+  <div class="divider"></div>
+  <div class="secLabel">Text size &amp; fade</div>
+  <div class="row">
+    <div>
+      <label for="sizeRange">Text size</label>
+      <input type="range" id="sizeRange" min="16" max="56" value="34">
+    </div>
+    <div>
+      <label for="fadeRange">Fade height</label>
+      <input type="range" id="fadeRange" min="30" max="80" value="55">
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="opacityRange">Fade darkness</label>
+      <input type="range" id="opacityRange" min="20" max="100" value="100">
+    </div>
+    <div>
+      <label for="fadeColor">Fade color</label>
+      <input type="color" id="fadeColor" value="#000000" style="width:100%;height:42px;padding:0;border:1px solid var(--line);border-radius:8px;background:#0d0d10">
+    </div>
+  </div>
+  <div>
+    <label>Quick fade colors</label>
+    <div class="swatches" id="fadeSwatches"></div>
+  </div>
+
+  <button class="smallghost" id="applyAll">↧ Apply size, fade, align &amp; font to all content slides</button>
+
+  <div class="row">
+    <div>
+      <label for="handleInput">Bottom-left (cover)</label>
+      <input type="text" id="handleInput" value="@Millionaire.life.style">
+    </div>
+    <div>
+      <label for="swipeInput">Bottom-right (cover)</label>
+      <input type="text" id="swipeInput" value="Swipe for more">
+    </div>
+  </div>
+  <div>
+    <label>Footer text color (bottom handle &amp; "Swipe for more" / end handle)</label>
+    <div class="swatches" id="footerSwatches"></div>
+  </div>
+  <div class="colorRow">
+    <input type="color" id="footerColorPick" value="#ffffff">
+    <span style="font-size:12px;color:var(--muted)">tap a swatch or pick a custom footer color</span>
+  </div>
+
+  <div class="divider"></div>
+  <div class="secLabel">Circles</div>
+  <div>
+    <label for="circAddInput">Add circle (photo or video)</label>
+    <input type="file" id="circAddInput" accept="image/*,video/*">
+  </div>
+  <div class="row">
+    <div>
+      <label for="circSizeRange">Circle size (selected)</label>
+      <input type="range" id="circSizeRange" min="15" max="60" value="33">
+    </div>
+    <div>
+      <label for="circZoomRange">Circle zoom (selected)</label>
+      <input type="range" id="circZoomRange" min="100" max="300" value="100">
+    </div>
+  </div>
+  <button class="smallghost" id="circDelete">✕ Delete selected circle</button>
+
+  <div class="divider"></div>
+  <div class="secLabel">Watermark / Logo (all slides)</div>
+  <div>
+    <label for="wmInput">Upload logo (PNG with transparency works best)</label>
+    <input type="file" id="wmInput" accept="image/*">
+  </div>
+  <div class="row">
+    <div>
+      <label for="wmPos">Quick corner</label>
+      <select id="wmPos">
+        <option value="tl">Top left</option>
+        <option value="tc">Top center</option>
+        <option value="tr">Top right</option>
+        <option value="bl">Bottom left</option>
+        <option value="bc">Bottom center</option>
+        <option value="br">Bottom right</option>
+      </select>
+    </div>
+    <div>
+      <label for="wmSize">Logo size</label>
+      <input type="range" id="wmSize" min="8" max="60" value="20">
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label for="wmOpacity">Logo transparency</label>
+      <input type="range" id="wmOpacity" min="10" max="100" value="100">
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button class="smallghost" id="wmClear">✕ Remove logo</button>
+    </div>
+  </div>
+  <div class="seg">
+    <button id="wmAnchor" style="flex:1">Anchor above text</button>
+    <button id="wmLine" style="flex:1">Divider line</button>
+  </div>
+  <div class="hint" style="margin-top:0">Tap "Anchor above text" to lock the logo above your headline — it follows the text size and position. Add a "Divider line" for the header look. Or just drag the logo anywhere on the preview.</div>
+
+  <div class="divider"></div>
+  <div class="secLabel">Eyedropper — grab a color from any image</div>
+  <div>
+    <label for="eyeInput">Upload an image, then tap it to copy a color into your palette</label>
+    <input type="file" id="eyeInput" accept="image/*">
+  </div>
+  <canvas id="eyeCanvas" style="display:none;width:100%;border-radius:8px;border:1px solid var(--line);cursor:crosshair"></canvas>
+
+  <div class="divider"></div>
+  <div class="btnrow">
+    <button class="primary" id="dlOne">Generate this slide</button>
+    <button class="primary" id="dlAll">Generate all</button>
+  </div>
+  <button class="danger" id="delSlide">🗑 Delete this slide</button>
+
+  <div class="divider"></div>
+  <div class="secLabel">Save / Load project</div>
+  <div class="btnrow">
+    <button class="smallghost" id="saveProj">💾 Save project to file</button>
+    <button class="smallghost" id="loadProjBtn">📂 Open saved project</button>
+  </div>
+  <input type="file" id="loadProj" accept=".json,application/json" style="display:none">
+
+  <div class="hint">Color words: highlight letters in the text box, tap a swatch. Added colors auto-save on your device. Long-press a swatch to remove it. Eyedropper: upload an image, tap to grab a color. Save project keeps slides + presets to reopen later. Videos export muted. Photos: press and hold the result → Save to Photos. Videos: tap Download.</div>
+</div>
+</div><!-- /rightCol -->
+</div><!-- /layout -->
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ---------- presets ----------
+// A preset captures the look (font, colors, fade, alignment, footer text, watermark settings).
+let presets = {
+  "Millionaire Lifestyle (default)": {
+    font:'Anton', color:'#ffffff', align:'center',
+    contentAlign:'left', contentFont:'Inter', contentSize:25,
+    fade:55, scrimOp:1, fadeHex:'#000000',
+    handle:'@Millionaire.life.style', swipe:'Swipe for more',
+    palette:['#ffffff','#e6c878','#000000','#1d9bf0','#5865f2','#e23b3b','#37b24d'],
+    wmPos:'br', wmSize:20
+  }
+};
+try{
+  const savedP = JSON.parse(localStorage.getItem('mls_presets')||'null');
+  if(savedP && typeof savedP==='object'){ presets = Object.assign(presets, savedP); }
+}catch(e){}
+function persistPresets(){
+  try{ localStorage.setItem('mls_presets', JSON.stringify(presets)); }catch(e){}
+}
+
+// ---------- global defaults (inherited by new content slides) ----------
+let contentDefaults = { size:25, fade:55, align:'left', font:'Inter', scrimOp:1, fadeHex:'#000000' };
+try{
+  const savedD = JSON.parse(localStorage.getItem('mls_defaults')||'null');
+  if(savedD && typeof savedD==='object') contentDefaults = Object.assign(contentDefaults, savedD);
+}catch(e){}
+function persistDefaults(){
+  try{ localStorage.setItem('mls_defaults', JSON.stringify(contentDefaults)); }catch(e){}
+}
+
+// ---------- color palette ----------
+let palette = ['#ffffff','#e6c878','#000000','#1d9bf0','#5865f2','#e23b3b','#37b24d'];
+// load any colors the user saved before (persists across sessions on this device)
+try{
+  const saved = JSON.parse(localStorage.getItem('mls_palette')||'null');
+  if(Array.isArray(saved) && saved.length) palette = saved;
+}catch(e){}
+function persistPalette(){
+  try{ localStorage.setItem('mls_palette', JSON.stringify(palette)); }catch(e){}
+}
+
+// ---------- watermark (shared across slides) ----------
+let watermark = { src:null, pos:'br', size:20, x:null, y:null, opacity:1, anchorText:false, line:false };
+try{
+  const savedW = JSON.parse(localStorage.getItem('mls_watermark')||'null');
+  if(savedW && typeof savedW==='object') watermark = Object.assign(watermark, savedW);
+}catch(e){}
+function persistWatermark(){
+  try{ localStorage.setItem('mls_watermark', JSON.stringify(watermark)); }catch(e){}
+}
+
+// ---------- state ----------
+function newSlide(type){
+  const base = {
+    type,
+    text: type === 'cover' ? "INSERT TEXT HERE"
+        : type === 'end' ? "IF YOU DON'T FOLLOW US RIGHT NOW YOU WILL NEVER SEE OUR PAGE AGAIN"
+        : "Insert text here",
+    runs: null,           // optional [{text,color}] for per-word colors; null = solid color
+    color: '#ffffff',
+    footerColor: '#ffffff',
+    textEffect: 'shadow',   // 'none' | 'outline' | 'shadow'
+    strokeColor: '#000000',
+    align: type==='content' ? contentDefaults.align : 'center',
+    font: type==='content' ? contentDefaults.font : 'Anton',
+    mediaKind: null, imgData: null, vidUrl: null,
+    size: type === 'cover' ? 34 : type === 'end' ? 34 : contentDefaults.size,
+    fade: type==='content' ? contentDefaults.fade : 55,
+    scrimOp: type==='content' ? contentDefaults.scrimOp : 1,
+    fadeHex: type==='content' ? contentDefaults.fadeHex : '#000000',
+    zoom: 1, offX: 0, offY: 0,
+    circles: []
+  };
+  return base;
+}
+const slides = [ newSlide('cover'), newSlide('content') ];
+let cur = 0;
+let selCircle = -1;
+let wmSelected = false;
+
+function isVideoFile(f){
+  const name = (f.name||'').toLowerCase();
+  return (f.type && f.type.startsWith('video'))
+    || /\.(mov|mp4|m4v|webm|hevc|avi)$/.test(name)
+    || (!f.type && !/\.(jpg|jpeg|png|gif|webp|heic|heif)$/.test(name));
+}
+function hexToRgba(hex, a){
+  const n = parseInt(hex.replace('#',''),16);
+  const r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// ---------- render ----------
+function renderTabs(){
+  const t = $('tabs'); t.innerHTML = '';
+  slides.forEach((s,i)=>{
+    const b = document.createElement('button');
+    b.className = 'tab' + (i===cur?' active':'');
+    const hasVid = s.mediaKind==='vid' || s.circles.some(c=>c.kind==='vid');
+    b.textContent = (i+1) + (s.type==='cover'?' · Cover':'') + (s.type==='end'?' · End':'') + (hasVid?' ▶':'');
+    b.onclick = ()=>{ cur=i; selCircle=-1; renderAll(); };
+    t.appendChild(b);
+  });
+  const add = document.createElement('button');
+  add.className = 'tab add'; add.textContent = '+ Add slide';
+  add.onclick = ()=>{ slides.push(newSlide('content')); cur = slides.length-1; selCircle=-1; renderAll(); };
+  t.appendChild(add);
+  const end = document.createElement('button');
+  end.className = 'tab add'; end.textContent = '+ End slide';
+  end.onclick = ()=>{ slides.push(newSlide('end')); cur = slides.length-1; selCircle=-1; renderAll(); };
+  t.appendChild(end);
+}
+
+function applyTransform(){
+  const s = slides[cur];
+  const post = $('post');
+  const px = s.offX * post.clientWidth;
+  const py = s.offY * post.clientHeight;
+  // base element uses object-fit:contain (whole image). To FILL the frame at zoom=1,
+  // multiply by the fill factor (ratio that turns contain into cover). Zooming out below 1 reveals all.
+  const ff = s.fillFactor || 1;
+  const sc = ff * s.zoom;
+  const tf = `translate(${px}px, ${py}px) scale(${sc})`;
+  $('bgimg').style.transform = tf;
+  $('bgvid').style.transform = tf;
+}
+function computeFillFactor(natW,natH){
+  const W=4, H=5; // frame ratio 4:5
+  const ir=natW/natH, r=W/H;
+  // contain fits the limiting dimension; cover needs the larger scale
+  return ir>r ? (ir/r) : (r/ir);
+}
+
+function textHTML(s){
+  if (s.runs && s.runs.length){
+    return s.runs.map(r=> `<span style="color:${r.color}">${escapeHTML(r.text)}</span>`).join('');
+  }
+  return escapeHTML(s.text);
+}
+function escapeHTML(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderCircles(){
+  const s = slides[cur];
+  const post = $('post');
+  post.querySelectorAll('.circle').forEach(el=>el.remove());
+  s.circles.forEach((c,i)=>{
+    const el = document.createElement('div');
+    el.className = 'circle' + (i===selCircle?' sel':'');
+    el.style.left = (c.x*100)+'%';
+    el.style.top = (c.y*100)+'%';
+    el.style.width = (c.size*100)+'%';
+    el.style.aspectRatio = '1/1';
+    let inner;
+    if (c.kind==='vid'){
+      inner = document.createElement('video');
+      inner.src = c.src; inner.muted=true; inner.defaultMuted=true;
+      inner.loop=true; inner.playsInline=true; inner.setAttribute('playsinline','');
+      inner.autoplay=true; inner.play().catch(()=>{});
+    } else {
+      inner = document.createElement('img'); inner.src = c.src;
+    }
+    inner.style.transform = `scale(${c.cZoom||1})`;
+    el.appendChild(inner);
+    post.insertBefore(el, $('watermark'));
+  });
+}
+
+function applyScrim(s){
+  const sc = $('scrim');
+  sc.style.height = s.fade + '%';
+  const hex = s.fadeHex || '#000000';
+  sc.style.background = `linear-gradient(to top,
+    ${hexToRgba(hex,1)} 0%, ${hexToRgba(hex,1)} 45%,
+    ${hexToRgba(hex,.85)} 62%, ${hexToRgba(hex,.45)} 82%, ${hexToRgba(hex,0)} 100%)`;
+  sc.style.opacity = s.scrimOp;
+}
+
+function defaultWmXY(){
+  // derive a starting x/y (fractions) from the corner dropdown
+  const p=watermark.pos, m=0.06;
+  let x = p[1]==='l'?m : p[1]==='r'?1-m : 0.5;
+  let y = p[0]==='t'?m : 1-m;
+  return {x,y};
+}
+function placeWatermark(){
+  const wm = $('watermark');
+  const lineL = $('wmlineL'), lineR = $('wmlineR');
+  if (!watermark.src){ wm.style.display='none'; lineL.style.display='none'; lineR.style.display='none'; return; }
+  wm.src = watermark.src;
+  wm.style.display='block';
+  wm.style.width = watermark.size + '%';
+  wm.style.height = 'auto';
+  wm.style.opacity = (watermark.opacity==null?1:watermark.opacity);
+
+  const s = slides[cur];
+  if (watermark.anchorText){
+    const post=$('post');
+    const isCaps = s.type==='cover'||s.type==='end';
+    const textEl = isCaps ? $('headline') : $('caption');
+    const pr=post.getBoundingClientRect();
+    const tr=textEl.getBoundingClientRect();
+    const cx = ((tr.left+tr.right)/2 - pr.left)/pr.width;
+    const gap = 0.03;
+    const topY = (tr.top - pr.top)/pr.height - gap;
+    watermark.x = cx; watermark.y = topY;
+  }
+  if (watermark.x==null||watermark.y==null){ const d=defaultWmXY(); watermark.x=d.x; watermark.y=d.y; }
+  wm.style.left = (watermark.x*100)+'%';
+  wm.style.top = (watermark.y*100)+'%';
+  wm.classList.toggle('sel', wmSelected);
+
+  if (watermark.line){
+    const post=$('post'); const wr=wm.getBoundingClientRect(); const pr=post.getBoundingClientRect();
+    const cy=((wr.top+wr.bottom)/2 - pr.top)/pr.height;        // line height = logo center
+    const logoLeft=(wr.left-pr.left)/pr.width;
+    const logoRight=(wr.right-pr.left)/pr.width;
+    const pad=0.025; // gap between line and logo
+    lineL.style.display='block'; lineR.style.display='block';
+    lineL.style.top=(cy*100)+'%';
+    lineR.style.top=(cy*100)+'%';
+    // left segment: from 5% to logoLeft-pad
+    lineL.style.width = Math.max(0,(logoLeft-pad-0.05))*100 + '%';
+    // right segment: from logoRight+pad to 95%
+    lineR.style.width = Math.max(0,(0.95-(logoRight+pad)))*100 + '%';
+  } else { lineL.style.display='none'; lineR.style.display='none'; }
+}
+
+function renderPreview(){
+  const s = slides[cur];
+  $('pagecount').textContent = (cur+1) + '/' + slides.length;
+  const isImg = s.mediaKind==='img', isVid = s.mediaKind==='vid';
+  $('bgimg').style.display = isImg ? 'block' : 'none';
+  $('bgvid').style.display = isVid ? 'block' : 'none';
+  if (isImg && $('bgimg').src !== s.imgData){
+    $('bgimg').src = s.imgData;
+    $('bgimg').onload = ()=>{ s.fillFactor = computeFillFactor($('bgimg').naturalWidth, $('bgimg').naturalHeight); applyTransform(); };
+  }
+  if (isVid && $('bgvid').src !== s.vidUrl){
+    const bv = $('bgvid');
+    bv.muted=true; bv.defaultMuted=true; bv.loop=true;
+    bv.src = s.vidUrl; bv.load();
+    bv.onloadedmetadata = ()=>{ s.fillFactor = computeFillFactor(bv.videoWidth, bv.videoHeight); applyTransform(); };
+    const tryPlay = ()=> bv.play().catch(()=>{});
+    if (bv.readyState >= 2) tryPlay(); else bv.onloadeddata = tryPlay;
+  }
+  if (!isVid) { $('bgvid').pause(); }
+  applyTransform();
+  $('noimg').style.display = (isImg||isVid||s.circles.length) ? 'none' : 'flex';
+  $('dragHint').style.display = (isImg||isVid) ? 'block' : 'none';
+  applyScrim(s);
+  renderCircles();
+  placeWatermark();
+
+  const isCover = s.type === 'cover';
+  const isEnd = s.type === 'end';
+  const isCaps = isCover || isEnd;
+  const hEl = $('headline'), cEl = $('caption');
+  hEl.style.display = isCaps ? 'block' : 'none';
+  cEl.style.display = isCaps ? 'none' : 'block';
+  $('footerRow').style.display = isCover ? 'flex' : 'none';
+  $('endHandle').style.display = isEnd ? 'block' : 'none';
+  $('footerRow').style.color = s.footerColor || '#fff';
+  $('endHandle').style.color = s.footerColor || '#fff';
+  hEl.style.bottom = isEnd ? '15%' : '11%';
+
+  const target = isCaps ? hEl : cEl;
+  target.innerHTML = textHTML(s);
+  target.style.fontSize = (s.size/4.2) + 'cqw';
+  target.style.textAlign = s.align;
+  target.style.fontFamily = `'${s.font}', sans-serif`;
+  if (!s.runs) target.style.color = s.color;
+  else target.style.color = '';
+  // text edge effect
+  const eff = s.textEffect || 'shadow';
+  const stroke = s.strokeColor || '#000000';
+  if (eff==='none'){
+    target.style.textShadow='none';
+    target.style.webkitTextStroke='0';
+  } else if (eff==='outline'){
+    const ow = (s.size/4.2)*0.07; // outline scales with text size
+    target.style.textShadow='none';
+    target.style.webkitTextStroke = ow+'cqw '+stroke;
+    target.style.paintOrder='stroke fill';
+  } else {
+    target.style.webkitTextStroke='0';
+    target.style.textShadow = isCaps ? '0 2px 10px rgba(0,0,0,.6)' : '0 1px 8px rgba(0,0,0,.55)';
+  }
+  hEl.style.textTransform = (s.font==='Inter'||s.font==='Montserrat') ? 'uppercase' : 'uppercase';
+}
+
+function renderControls(){
+  const s = slides[cur];
+  $('typeCover').classList.toggle('on', s.type==='cover');
+  $('typeContent').classList.toggle('on', s.type==='content');
+  $('typeEnd').classList.toggle('on', s.type==='end');
+  $('textInput').value = s.text;
+  $('sizeRange').value = s.size;
+  $('fadeRange').value = s.fade;
+  $('opacityRange').value = Math.round(s.scrimOp*100);
+  $('fadeColor').value = s.fadeHex || '#000000';
+  $('footerColorPick').value = s.footerColor || '#ffffff';
+  $('zoomRange').value = Math.round(s.zoom*100);
+  $('fontSelect').value = s.font;
+  [...$('alignSeg').children].forEach(b=>b.classList.toggle('on', b.dataset.a===s.align));
+  [...$('effectSeg').children].forEach(b=>b.classList.toggle('on', b.dataset.e===(s.textEffect||'shadow')));
+  $('strokeColorPick').value = s.strokeColor || '#000000';
+  $('strokeRow').style.display = (s.textEffect==='outline') ? 'flex' : 'none';
+  $('wmPos').value = watermark.pos;
+  $('wmSize').value = watermark.size;
+  $('wmOpacity').value = Math.round((watermark.opacity==null?1:watermark.opacity)*100);
+  $('wmAnchor').classList.toggle('on', !!watermark.anchorText);
+  $('wmLine').classList.toggle('on', !!watermark.line);
+  $('imgInput').value=''; $('circAddInput').value=''; $('wmInput').value='';
+  renderSwatches();
+}
+
+function renderSwatches(){
+  const w = $('swatches'); w.innerHTML='';
+  palette.forEach((col,idx)=>{
+    const d = document.createElement('div');
+    d.className='sw'; d.style.background=col;
+    d.title='Tap to use · long-press to remove';
+    d.onclick = ()=> applyColor(col);
+    // long-press (touch) or right-click (mouse) removes the swatch
+    let lp;
+    d.addEventListener('touchstart', ()=>{ lp=setTimeout(()=>{ removeSwatch(idx); }, 600); }, {passive:true});
+    d.addEventListener('touchend', ()=>clearTimeout(lp));
+    d.addEventListener('touchmove', ()=>clearTimeout(lp));
+    d.addEventListener('contextmenu', e=>{ e.preventDefault(); removeSwatch(idx); });
+    w.appendChild(d);
+  });
+  renderFadeSwatches();
+  renderFooterSwatches();
+}
+function renderFadeSwatches(){
+  const w=$('fadeSwatches'); if(!w) return; w.innerHTML='';
+  palette.forEach(col=>{
+    const d=document.createElement('div'); d.className='sw'; d.style.background=col;
+    d.onclick=()=>{ slides[cur].fadeHex=col; $('fadeColor').value=col; renderPreview(); };
+    w.appendChild(d);
+  });
+}
+function renderFooterSwatches(){
+  const w=$('footerSwatches'); if(!w) return; w.innerHTML='';
+  palette.forEach(col=>{
+    const d=document.createElement('div'); d.className='sw'; d.style.background=col;
+    d.onclick=()=>{ slides[cur].footerColor=col; $('footerColorPick').value=col; renderPreview(); };
+    w.appendChild(d);
+  });
+}
+function removeSwatch(idx){
+  if(palette.length<=1) return;
+  if(confirm('Remove this color from your palette?')){
+    palette.splice(idx,1); persistPalette(); renderSwatches();
+  }
+}
+
+function renderAll(){ renderTabs(); renderControls(); renderPreview(); }
+
+// ---------- text color ----------
+let lastSel = null; // remember selection because tapping a swatch blurs the textarea
+(function(){
+  const ta = $('textInput');
+  const remember = ()=>{
+    if(document.activeElement===ta && ta.selectionStart!==ta.selectionEnd){
+      lastSel = { start: ta.selectionStart, end: ta.selectionEnd };
+    }
+  };
+  ta.addEventListener('select', remember);
+  ta.addEventListener('keyup', remember);
+  ta.addEventListener('mouseup', remember);
+  ta.addEventListener('touchend', remember);
+})();
+
+function applyColor(col){
+  const s = slides[cur];
+  const ta = $('textInput');
+  let start = ta.selectionStart, end = ta.selectionEnd;
+  // if the textarea lost its selection (e.g. tapping a swatch on mobile), use the remembered one
+  if(start===end && lastSel && lastSel.end>lastSel.start){ start=lastSel.start; end=lastSel.end; }
+  if(start===end || start==null){
+    // no selection -> color all, drop runs
+    s.runs = null; s.color = col;
+    renderPreview(); return;
+  }
+  const text = s.text;
+  const baseColor = s.color || '#ffffff';
+  let runs = s.runs ? expandRuns(s.runs) : text.split('').map(ch=>({ch, color:baseColor}));
+  for (let i=start;i<end && i<runs.length;i++){ if(runs[i]) runs[i].color = col; }
+  s.runs = compressRuns(runs);
+  renderPreview();
+}
+function expandRuns(runs){
+  const out=[];
+  runs.forEach(r=>{ for(const ch of r.text) out.push({ch, color:r.color}); });
+  return out;
+}
+function compressRuns(chars){
+  const out=[];
+  chars.forEach(c=>{
+    const last = out[out.length-1];
+    if (last && last.color===c.color) last.text += c.ch;
+    else out.push({text:c.ch, color:c.color});
+  });
+  return out;
+}
+
+$('addSwatch').onclick = ()=>{ const c=$('customColor').value; if(!palette.includes(c)) palette.push(c); persistPalette(); renderSwatches(); };
+$('clearColors').onclick = ()=>{ const s=slides[cur]; s.runs=null; s.color='#ffffff'; renderPreview(); };
+
+// ---------- events ----------
+function setType(t){
+  const s=slides[cur];
+  if(s.type===t) return;
+  const presets=["INSERT TEXT HERE","Insert text here","IF YOU DON'T FOLLOW US RIGHT NOW YOU WILL NEVER SEE OUR PAGE AGAIN"];
+  const wasPreset = presets.includes(s.text);
+  s.type=t;
+  if(t==='cover'){ s.size=34; s.align='center'; s.font='Anton'; if(wasPreset) s.text='INSERT TEXT HERE'; }
+  else if(t==='end'){ s.size=34; s.align='center'; s.font='Anton'; if(wasPreset) s.text="IF YOU DON'T FOLLOW US RIGHT NOW YOU WILL NEVER SEE OUR PAGE AGAIN"; }
+  else { s.size=contentDefaults.size; s.align=contentDefaults.align; s.font=contentDefaults.font; if(wasPreset) s.text='Insert text here'; }
+  s.runs=null;
+  renderAll();
+}
+$('typeCover').onclick=()=>setType('cover');
+$('typeContent').onclick=()=>setType('content');
+$('typeEnd').onclick=()=>setType('end');
+
+$('textInput').addEventListener('input', e=>{
+  const s=slides[cur];
+  const newText=e.target.value;
+  // if the text had per-word colors, try to keep them; if length changed a lot just keep solid
+  if(s.runs && s.runs.length){
+    // simplest safe behavior: keep runs only if the new text starts the same; else reset
+    if(!newText.startsWith(s.text) && !s.text.startsWith(newText)){ s.runs=null; }
+    else {
+      // rebuild runs trimmed/extended to new length, new chars take the last color
+      const chars=expandRuns(s.runs);
+      const lastColor = chars.length?chars[chars.length-1].color:(s.color||'#ffffff');
+      const out=[];
+      for(let i=0;i<newText.length;i++){ out.push({ch:newText[i], color: chars[i]?chars[i].color:lastColor}); }
+      s.runs=compressRuns(out);
+    }
+  }
+  s.text=newText;
+  lastSel=null;
+  renderPreview();
+});
+$('sizeRange').addEventListener('input', e=>{ slides[cur].size=+e.target.value; renderPreview(); });
+$('fadeRange').addEventListener('input', e=>{ slides[cur].fade=+e.target.value; renderPreview(); });
+$('opacityRange').addEventListener('input', e=>{ slides[cur].scrimOp=+e.target.value/100; renderPreview(); });
+$('fadeColor').addEventListener('input', e=>{ slides[cur].fadeHex=e.target.value; renderPreview(); });
+$('footerColorPick').addEventListener('input', e=>{ slides[cur].footerColor=e.target.value; renderPreview(); });
+$('zoomRange').addEventListener('input', e=>{ slides[cur].zoom=+e.target.value/100; applyTransform(); });
+$('resetPos').onclick=()=>{ const s=slides[cur]; s.zoom=1; s.offX=0; s.offY=0; renderControls(); applyTransform(); };
+$('fontSelect').addEventListener('change', e=>{ slides[cur].font=e.target.value; renderPreview(); });
+[...$('alignSeg').children].forEach(b=> b.onclick=()=>{ slides[cur].align=b.dataset.a; renderControls(); renderPreview(); });
+[...$('effectSeg').children].forEach(b=> b.onclick=()=>{ slides[cur].textEffect=b.dataset.e; renderControls(); renderPreview(); });
+$('strokeColorPick').addEventListener('input', e=>{ slides[cur].strokeColor=e.target.value; renderPreview(); });
+
+$('applyAll').onclick=()=>{
+  const s=slides[cur];
+  contentDefaults={ size:s.size, fade:s.fade, align:s.align, font:s.font, scrimOp:s.scrimOp, fadeHex:s.fadeHex };
+  persistDefaults();
+  slides.forEach(o=>{ if(o.type==='content'){ o.size=s.size; o.fade=s.fade; o.align=s.align; o.font=s.font; o.scrimOp=s.scrimOp; o.fadeHex=s.fadeHex; } });
+  renderAll();
+  alert('Applied to all content slides and saved as your default.');
+};
+
+$('handleInput').addEventListener('input', renderFooter);
+$('swipeInput').addEventListener('input', renderFooter);
+function renderFooter(){
+  $('footerRow').children[0].textContent=$('handleInput').value;
+  $('footerRow').children[1].textContent=$('swipeInput').value;
+}
+
+$('imgInput').addEventListener('change', e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const s=slides[cur]; s.zoom=1; s.offX=0; s.offY=0;
+  if(isVideoFile(f)){
+    if(s.vidUrl) URL.revokeObjectURL(s.vidUrl);
+    s.vidUrl=URL.createObjectURL(f); s.mediaKind='vid'; s.imgData=null; renderAll();
+  } else {
+    const r=new FileReader(); r.onload=ev=>{ s.imgData=ev.target.result; s.mediaKind='img'; s.vidUrl=null; renderAll(); }; r.readAsDataURL(f);
+  }
+});
+
+$('circAddInput').addEventListener('change', e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const s=slides[cur];
+  const spots=[{x:.22,y:.18},{x:.78,y:.18},{x:.5,y:.18}];
+  const spot=spots[Math.min(s.circles.length,spots.length-1)];
+  const add=(kind,src)=>{ s.circles.push({kind,src,x:spot.x,y:spot.y,size:.33,cZoom:1}); selCircle=s.circles.length-1; $('circSizeRange').value=33; $('circZoomRange').value=100; $('circAddInput').value=''; renderTabs(); renderPreview(); };
+  if(isVideoFile(f)) add('vid',URL.createObjectURL(f));
+  else { const r=new FileReader(); r.onload=ev=>add('img',ev.target.result); r.readAsDataURL(f); }
+});
+$('circSizeRange').addEventListener('input', e=>{ const s=slides[cur]; if(selCircle>=0&&s.circles[selCircle]){ s.circles[selCircle].size=+e.target.value/100; renderPreview(); } });
+$('circZoomRange').addEventListener('input', e=>{ const s=slides[cur]; if(selCircle>=0&&s.circles[selCircle]){ s.circles[selCircle].cZoom=+e.target.value/100; renderPreview(); } });
+$('circDelete').onclick=()=>{ const s=slides[cur]; if(selCircle>=0&&s.circles[selCircle]){ s.circles.splice(selCircle,1); selCircle=-1; renderTabs(); renderPreview(); } };
+
+// watermark
+$('wmInput').addEventListener('change', e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=ev=>{ watermark.src=ev.target.result; watermark.x=null; watermark.y=null; persistWatermark(); renderPreview(); }; r.readAsDataURL(f);
+});
+$('wmPos').addEventListener('change', e=>{ watermark.pos=e.target.value; const d=defaultWmXY(); watermark.x=d.x; watermark.y=d.y; persistWatermark(); renderPreview(); });
+$('wmSize').addEventListener('input', e=>{ watermark.size=+e.target.value; persistWatermark(); renderPreview(); });
+$('wmOpacity').addEventListener('input', e=>{ watermark.opacity=+e.target.value/100; persistWatermark(); renderPreview(); });
+$('wmClear').onclick=()=>{ watermark.src=null; wmSelected=false; $('wmInput').value=''; persistWatermark(); renderPreview(); };
+$('wmAnchor').onclick=()=>{ watermark.anchorText=!watermark.anchorText; persistWatermark(); renderControls(); renderPreview(); };
+$('wmLine').onclick=()=>{ watermark.line=!watermark.line; persistWatermark(); renderControls(); renderPreview(); };
+
+// eyedropper
+$('eyeInput').addEventListener('change', e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const cv=$('eyeCanvas'); const maxW=400;
+      const sc=Math.min(1,maxW/img.width);
+      cv.width=img.width*sc; cv.height=img.height*sc;
+      cv.style.display='block';
+      const ctx=cv.getContext('2d'); ctx.drawImage(img,0,0,cv.width,cv.height);
+    };
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(f);
+});
+$('eyeCanvas').addEventListener('click', e=>{
+  const cv=$('eyeCanvas'); const rect=cv.getBoundingClientRect();
+  const x=(e.clientX-rect.left)*(cv.width/rect.width);
+  const y=(e.clientY-rect.top)*(cv.height/rect.height);
+  const d=cv.getContext('2d').getImageData(x,y,1,1).data;
+  const hex='#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join('');
+  $('customColor').value=hex;
+  if(!palette.includes(hex)) palette.push(hex);
+  persistPalette();
+  renderSwatches();
+});
+
+$('delSlide').onclick=()=>{
+  if(slides.length===1){ alert("You need at least one slide."); return; }
+  slides.splice(cur,1); cur=Math.max(0,cur-1); selCircle=-1; renderAll();
+};
+
+// ---------- save / load ----------
+$('saveProj').onclick=()=>{
+  const data={ slides, contentDefaults, palette, watermark, presets,
+    handle:$('handleInput').value, swipe:$('swipeInput').value };
+  const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='carousel-project.json'; a.click();
+};
+$('loadProjBtn').onclick=()=> $('loadProj').click();
+$('loadProj').addEventListener('change', e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.slides){ slides.length=0; d.slides.forEach(s=>slides.push(s)); }
+      if(d.contentDefaults){ contentDefaults=d.contentDefaults; persistDefaults(); }
+      if(d.palette) { palette=d.palette; persistPalette(); }
+      if(d.watermark){ watermark=d.watermark; persistWatermark(); }
+      if(d.presets) { presets=d.presets; persistPresets(); renderPresetList(); }
+      if(d.handle) $('handleInput').value=d.handle;
+      if(d.swipe) $('swipeInput').value=d.swipe;
+      cur=0; selCircle=-1; renderAll();
+      alert('Project loaded.');
+    }catch(err){ alert('Could not read that project file.'); }
+  };
+  r.readAsText(f);
+});
+
+// ---------- drag ----------
+(function(){
+  const post=$('post');
+  let dragging=false, dragCircle=-1, dragWm=false, sx=0, sy=0, ox=0, oy=0;
+  function hitWatermark(fx,fy){
+    if(!watermark.src) return false;
+    const wm=$('watermark'); const pr=post.getBoundingClientRect(); const wr=wm.getBoundingClientRect();
+    const wx=(wr.left-pr.left)/pr.width, wy=(wr.top-pr.top)/pr.height;
+    const ww=wr.width/pr.width, wh=wr.height/pr.height;
+    return fx>=wx && fx<=wx+ww && fy>=wy && fy<=wy+wh;
+  }
+  function hitCircle(fx,fy){
+    const s=slides[cur];
+    for(let i=s.circles.length-1;i>=0;i--){
+      const c=s.circles[i]; const dx=fx-c.x; const dy=(fy-c.y)*1.25;
+      if(Math.sqrt(dx*dx+dy*dy)<=c.size/2) return i;
+    }
+    return -1;
+  }
+  const start=(x,y)=>{
+    const rect=post.getBoundingClientRect();
+    const fx=(x-rect.left)/rect.width, fy=(y-rect.top)/rect.height;
+    // watermark first (it's on top) — but not when anchored to text
+    if(!watermark.anchorText && hitWatermark(fx,fy)){
+      dragWm=true; dragging=true; sx=x; sy=y;
+      if(watermark.x==null){ const d=defaultWmXY(); watermark.x=d.x; watermark.y=d.y; }
+      ox=watermark.x; oy=watermark.y;
+      if(!wmSelected){ wmSelected=true; }
+      if(selCircle!==-1) selCircle=-1;
+      renderPreview(); return;
+    }
+    if(wmSelected){ wmSelected=false; renderPreview(); }
+    const hit=hitCircle(fx,fy);
+    if(hit>=0){
+      dragCircle=hit;
+      if(selCircle!==hit){ selCircle=hit; $('circSizeRange').value=Math.round(slides[cur].circles[hit].size*100); $('circZoomRange').value=Math.round((slides[cur].circles[hit].cZoom||1)*100); renderPreview(); }
+      dragging=true; sx=x; sy=y; ox=slides[cur].circles[hit].x; oy=slides[cur].circles[hit].y; return;
+    }
+    dragCircle=-1;
+    if(selCircle!==-1){ selCircle=-1; renderPreview(); }
+    if(!slides[cur].mediaKind) return;
+    dragging=true; sx=x; sy=y; ox=slides[cur].offX; oy=slides[cur].offY;
+  };
+  const move=(x,y)=>{
+    if(!dragging) return;
+    const s=slides[cur]; const rect=post.getBoundingClientRect();
+    if(dragWm){
+      watermark.x=Math.min(1,Math.max(0,ox+(x-sx)/rect.width));
+      watermark.y=Math.min(1,Math.max(0,oy+(y-sy)/rect.height));
+      const wm=$('watermark'); wm.style.left=(watermark.x*100)+'%'; wm.style.top=(watermark.y*100)+'%';
+      return;
+    }
+    if(dragCircle>=0&&s.circles[dragCircle]){
+      const c=s.circles[dragCircle];
+      c.x=Math.min(1,Math.max(0,ox+(x-sx)/rect.width));
+      c.y=Math.min(1,Math.max(0,oy+(y-sy)/rect.height));
+      const el=post.querySelectorAll('.circle')[dragCircle];
+      if(el){ el.style.left=(c.x*100)+'%'; el.style.top=(c.y*100)+'%'; }
+      return;
+    }
+    s.offX=ox+(x-sx)/rect.width; s.offY=oy+(y-sy)/rect.height; applyTransform();
+  };
+  const end=()=>{ if(dragWm) persistWatermark(); dragging=false; dragCircle=-1; dragWm=false; };
+  post.addEventListener('touchstart',e=>{ start(e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
+  post.addEventListener('touchmove',e=>{ if(dragging){ e.preventDefault(); move(e.touches[0].clientX,e.touches[0].clientY); } },{passive:false});
+  post.addEventListener('touchend',end);
+  post.addEventListener('mousedown',e=>start(e.clientX,e.clientY));
+  window.addEventListener('mousemove',e=>move(e.clientX,e.clientY));
+  window.addEventListener('mouseup',end);
+})();
+
+// ---------- drawing helpers ----------
+function drawAdjusted(ctx,el,natW,natH,W,H,zoom,offX,offY){
+  const ir=natW/natH, r=W/H;
+  // contain base (whole image fits)
+  let dw,dh;
+  if(ir>r){ dw=W; dh=W/ir; } else { dh=H; dw=H*ir; }
+  // fill factor turns contain into cover at zoom=1; zoom out reveals the whole image
+  const ff = ir>r ? (ir/r) : (r/ir);
+  const sc = ff * zoom;
+  dw*=sc; dh*=sc;
+  ctx.drawImage(el,(W-dw)/2+offX*W,(H-dh)/2+offY*H,dw,dh);
+}
+function wrapRuns(ctx, runs, maxW){
+  // runs: [{text,color}]; returns array of lines, each = [{text,color}]
+  const tokens=[];
+  runs.forEach(r=>{
+    const parts=r.text.split(/(\s+|\n)/);
+    parts.forEach(p=>{ if(p!=='') tokens.push({text:p, color:r.color}); });
+  });
+  const lines=[]; let line=[]; let lineStr='';
+  const pushLine=()=>{ lines.push(line); line=[]; lineStr=''; };
+  tokens.forEach(tk=>{
+    if(tk.text==='\n'){ pushLine(); return; }
+    const test=lineStr+tk.text;
+    if(ctx.measureText(test).width>maxW && lineStr.trim()!==''){ pushLine(); if(/^\s+$/.test(tk.text)) return; line.push(tk); lineStr=tk.text; }
+    else { line.push(tk); lineStr=test; }
+  });
+  pushLine();
+  return lines.map(l=>{ // trim leading whitespace tokens
+    while(l.length && /^\s+$/.test(l[0].text)) l.shift();
+    return l;
+  });
+}
+function lineWidth(ctx,line){ return line.reduce((w,t)=>w+ctx.measureText(t.text).width,0); }
+function drawRunLine(ctx,line,cx,y,align,W,leftPad,stroke){
+  const total=lineWidth(ctx,line);
+  let x;
+  if(align==='center') x=cx-total/2;
+  else if(align==='right') x=W-leftPad-total;
+  else x=leftPad;
+  ctx.textAlign='left';
+  line.forEach(t=>{
+    if(stroke){ ctx.strokeText(t.text,x,y); }
+    ctx.fillStyle=t.color; ctx.fillText(t.text,x,y);
+    x+=ctx.measureText(t.text).width;
+  });
+}
+
+function runsFor(s){
+  return (s.runs && s.runs.length) ? s.runs : [{text:s.text, color:s.color||'#ffffff'}];
+}
+
+function drawOverlay(ctx, s, W, H){
+  const scale=W/420;
+  // scrim
+  const hex=s.fadeHex||'#000000';
+  const top=H*(1 - s.fade/100);
+  const g=ctx.createLinearGradient(0,H,0,top);
+  g.addColorStop(0,hexToRgba(hex,1)); g.addColorStop(.45,hexToRgba(hex,1));
+  g.addColorStop(.62,hexToRgba(hex,.85)); g.addColorStop(.82,hexToRgba(hex,.45));
+  g.addColorStop(1,hexToRgba(hex,0));
+  ctx.save(); ctx.globalAlpha=s.scrimOp; ctx.fillStyle=g; ctx.fillRect(0,top,W,H-top); ctx.restore();
+
+  const isCaps = s.type==='cover'||s.type==='end';
+  const fontPx=s.size*scale;
+  const family=s.font;
+  const weight = (family==='Inter')?'400':(family==='Montserrat')?'700':'400';
+  const transform = isCaps;
+  ctx.font=`${weight} ${fontPx}px "${family}"`;
+  ctx.textBaseline='alphabetic';
+  const eff = s.textEffect || 'shadow';
+  let useStroke=false;
+  if(eff==='shadow'){
+    ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=isCaps?18:12; ctx.shadowOffsetY=isCaps?4:2;
+  } else if(eff==='outline'){
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+    ctx.strokeStyle=s.strokeColor||'#000000';
+    ctx.lineWidth=Math.max(2, fontPx*0.07);
+    ctx.lineJoin='round'; ctx.miterLimit=2;
+    useStroke=true;
+  } else {
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  }
+
+  let runs=runsFor(s);
+  if(transform) runs=runs.map(r=>({text:r.text.toUpperCase(), color:r.color}));
+
+  const leftPad = isCaps ? W*0.05 : W*0.055;
+  const maxW = isCaps ? W*0.9 : W*0.875;
+  const lines=wrapRuns(ctx, runs, maxW);
+  const lineH=fontPx*(isCaps?1.12:1.28);
+  const bottomY = s.type==='end'?H*0.85 : isCaps?H*0.89 : H*0.915;
+  let y=bottomY-(lines.length-1)*lineH;
+  // record top of the text block (approx: first baseline minus cap height) for anchored watermark
+  window.__textTopY = (y - fontPx) ;
+  lines.forEach(line=>{ drawRunLine(ctx,line,W/2,y,s.align,W,leftPad,useStroke); y+=lineH; });
+
+  // footer / end handle
+  ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  if(s.type==='cover'){
+    ctx.fillStyle=s.footerColor||'#fff';
+    ctx.font=`600 ${13*scale*0.9}px Inter`; ctx.textAlign='left';
+    ctx.fillText($('handleInput').value, W*0.05, H*0.975);
+    ctx.font=`400 ${13*scale*0.9}px Inter`; ctx.textAlign='right';
+    ctx.fillText($('swipeInput').value, W*0.95, H*0.975);
+  } else if(s.type==='end'){
+    ctx.fillStyle=s.footerColor||'#fff'; ctx.font=`400 ${14.3*scale*0.9}px Inter`; ctx.textAlign='center';
+    ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=8;
+    ctx.fillText('@Millionaire.life.style', W/2, H*0.945); ctx.shadowBlur=0;
+  }
+}
+
+function drawCircleEl(ctx,el,natW,natH,cx,cy,d,zoom){
+  if(!natW||!natH) return;
+  const side=Math.min(natW,natH)/(zoom||1);
+  const sx=(natW-side)/2, sy=(natH-side)/2;
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,d/2,0,Math.PI*2); ctx.closePath(); ctx.clip();
+  ctx.drawImage(el,sx,sy,side,side,cx-d/2,cy-d/2,d,d); ctx.restore();
+  ctx.save(); ctx.lineWidth=Math.max(6,d*0.022); ctx.strokeStyle='#fff';
+  ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=16; ctx.shadowOffsetY=5;
+  ctx.beginPath(); ctx.arc(cx,cy,d/2,0,Math.PI*2); ctx.stroke(); ctx.restore();
+}
+function drawCircles(ctx,circs,W,H){
+  circs.forEach(c=>{ if(!c.el) return;
+    const natW=c.kind==='vid'?c.el.videoWidth:c.el.width;
+    const natH=c.kind==='vid'?c.el.videoHeight:c.el.height;
+    drawCircleEl(ctx,c.el,natW,natH,c.x*W,c.y*H,c.size*W,c.cZoom||1);
+  });
+}
+function drawWatermark(ctx,wmImg,W,H){
+  if(!wmImg) return;
+  const w = W*(watermark.size/100);
+  const h = w * (wmImg.height/wmImg.width);
+  let cx,cy;
+  if(watermark.anchorText && window.__textTopY!=null){
+    cx = W/2;
+    cy = window.__textTopY - H*0.03 - h/2;  // gap above text
+  } else if(watermark.x!=null && watermark.y!=null){
+    cx=watermark.x*W; cy=watermark.y*H;
+  } else { const d=defaultWmXY(); cx=d.x*W; cy=d.y*H; }
+  // divider line — two segments with a gap around the logo, fading toward it
+  if(watermark.line){
+    const op = (watermark.opacity==null?1:watermark.opacity);
+    const ly = cy;
+    const lw = Math.max(2,W*0.0018);
+    const padX = w/2 + W*0.025;       // gap from logo center
+    const leftEnd = cx - padX, rightStart = cx + padX;
+    const x0 = W*0.05, x1 = W*0.95;
+    ctx.save();
+    ctx.lineWidth=lw; ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=4; ctx.shadowOffsetY=1;
+    // left segment, fading toward the logo
+    if(leftEnd > x0){
+      const gL=ctx.createLinearGradient(x0,0,leftEnd,0);
+      gL.addColorStop(0,`rgba(255,255,255,${0.85*op})`);
+      gL.addColorStop(0.7,`rgba(255,255,255,${0.85*op})`);
+      gL.addColorStop(1,`rgba(255,255,255,0)`);
+      ctx.strokeStyle=gL; ctx.beginPath(); ctx.moveTo(x0,ly); ctx.lineTo(leftEnd,ly); ctx.stroke();
+    }
+    // right segment
+    if(rightStart < x1){
+      const gR=ctx.createLinearGradient(x1,0,rightStart,0);
+      gR.addColorStop(0,`rgba(255,255,255,${0.85*op})`);
+      gR.addColorStop(0.7,`rgba(255,255,255,${0.85*op})`);
+      gR.addColorStop(1,`rgba(255,255,255,0)`);
+      ctx.strokeStyle=gR; ctx.beginPath(); ctx.moveTo(x1,ly); ctx.lineTo(rightStart,ly); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.globalAlpha = (watermark.opacity==null?1:watermark.opacity);
+  ctx.drawImage(wmImg, cx-w/2, cy-h/2, w, h);
+  ctx.restore();
+}
+
+function loadImg(src){ return new Promise(res=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; }); }
+function loadVid(src,loop){ return new Promise(res=>{ const v=document.createElement('video'); v.src=src; v.playsInline=true; v.setAttribute('playsinline',''); v.muted=true; v.defaultMuted=true; v.preload='auto'; v.loop=!!loop; v.onloadedmetadata=()=>res(v); v.onerror=()=>res(null); setTimeout(()=>res(v.readyState>=1?v:null),8000); }); }
+
+async function preloadCircles(s,primaryIsBg){
+  const circs=[]; let primaryIdx=-1;
+  if(!primaryIsBg) s.circles.forEach((c,i)=>{ if(c.kind==='vid'&&primaryIdx===-1) primaryIdx=i; });
+  for(let i=0;i<s.circles.length;i++){
+    const c=s.circles[i];
+    if(c.kind==='vid'){ const isP=!primaryIsBg&&i===primaryIdx; circs.push({...c,el:await loadVid(c.src,!isP),isPrimary:isP}); }
+    else circs.push({...c,el:await loadImg(c.src),isPrimary:false});
+  }
+  return circs;
+}
+
+async function ensureFonts(family){
+  // load the actual fonts used so the export never falls back to a default
+  const targets = [
+    `400 90px "${family}"`,
+    `700 90px "${family}"`,
+    `400 60px Inter`,
+    `600 30px Inter`
+  ];
+  try{
+    await Promise.all(targets.map(t=>document.fonts.load(t)));
+    await document.fonts.ready;
+  }catch(e){}
+  // tiny extra wait so the just-loaded font is registered before drawing
+  await new Promise(r=>setTimeout(r,60));
+}
+
+async function exportImageSlide(s){
+  await ensureFonts(s.font);
+  const W=1080,H=1350; const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d'); ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
+  if(s.imgData){ const img=await loadImg(s.imgData); if(img) drawAdjusted(ctx,img,img.width,img.height,W,H,s.zoom,s.offX,s.offY); }
+  drawOverlay(ctx,s,W,H);
+  const circs=await preloadCircles(s,true); drawCircles(ctx,circs,W,H);
+  if(watermark.src){ const wm=await loadImg(watermark.src); drawWatermark(ctx,wm,W,H); }
+  return { kind:'img', url: cv.toDataURL('image/png') };
+}
+
+function exportVideoSlide(s){
+  return new Promise(async(resolve)=>{
+    await ensureFonts(s.font);
+    const W=1080,H=1350; const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const ctx=cv.getContext('2d');
+    const bgIsVid=s.mediaKind==='vid'; let bgEl=null,bgImgEl=null;
+    if(bgIsVid){ bgEl=await loadVid(s.vidUrl,false); if(!bgEl||!bgEl.videoWidth){ alert('Could not load the background video.'); resolve(null); return; } }
+    else if(s.imgData) bgImgEl=await loadImg(s.imgData);
+    const circs=await preloadCircles(s,bgIsVid);
+    const circleVids=circs.filter(c=>c.kind==='vid'&&c.el);
+    const primary=bgIsVid?bgEl:(circleVids.find(c=>c.isPrimary)||{}).el;
+    if(!primary){ alert('No playable video found.'); resolve(null); return; }
+    const wmImg = watermark.src ? await loadImg(watermark.src) : null;
+    let stream; try{ stream=cv.captureStream(30); }catch(e){ try{ stream=cv.captureStream(); }catch(e2){ stream=null; } }
+    if(!stream){ alert('This browser cannot record from a canvas. Try Safari or Chrome.'); resolve(null); return; }
+    let mime=''; if(window.MediaRecorder){ for(const c of ['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm']) if(MediaRecorder.isTypeSupported(c)){ mime=c; break; } }
+    if(!window.MediaRecorder||!mime){ alert('Video rendering not supported here. Try Safari or Chrome.'); resolve(null); return; }
+    let rec; try{ rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:8000000}); }catch(e){ try{ rec=new MediaRecorder(stream); mime=rec.mimeType||'video/webm'; }catch(e2){ alert('Recording failed: '+e2.message); resolve(null); return; } }
+    const chunks=[]; rec.ondataavailable=e=>{ if(e.data&&e.data.size>0) chunks.push(e.data); };
+    rec.onstop=()=>{ if(!chunks.length){ alert('Recording produced no data — try Chrome.'); resolve(null); return; } const ext=mime.indexOf('mp4')>-1?'mp4':'webm'; resolve({kind:'vid',url:URL.createObjectURL(new Blob(chunks,{type:mime.split(';')[0]})),ext}); };
+    rec.onerror=e=>{ alert('Recording error: '+(e.error&&e.error.message||'unknown')); resolve(null); };
+    const allVids=[]; if(bgEl) allVids.push(bgEl); circleVids.forEach(c=>allVids.push(c.el));
+    for(const v of allVids){ try{ await v.play(); }catch(err){ v.muted=true; try{ await v.play(); }catch(e2){} } }
+    rec.start(250);
+    let running=true;
+    function draw(){
+      if(!running) return;
+      ctx.fillStyle='#1c1c22'; ctx.fillRect(0,0,W,H);
+      try{ if(bgEl) drawAdjusted(ctx,bgEl,bgEl.videoWidth,bgEl.videoHeight,W,H,s.zoom,s.offX,s.offY); else if(bgImgEl) drawAdjusted(ctx,bgImgEl,bgImgEl.width,bgImgEl.height,W,H,s.zoom,s.offX,s.offY); }catch(e){}
+      drawOverlay(ctx,s,W,H); drawCircles(ctx,circs,W,H); drawWatermark(ctx,wmImg,W,H);
+      requestAnimationFrame(draw);
+    }
+    primary.onended=()=>{ running=false; setTimeout(()=>{ try{rec.stop();}catch(e){} },300); };
+    setTimeout(()=>{ if(running){ running=false; try{rec.stop();}catch(e){} } },(primary.duration||60)*1000+4000);
+    draw();
+  });
+}
+
+async function exportSlide(idx){
+  const s=slides[idx];
+  const hasVid=s.mediaKind==='vid'||s.circles.some(c=>c.kind==='vid');
+  if(hasVid){ $('recBanner').style.display='block'; const out=await exportVideoSlide(s); $('recBanner').style.display='none'; return out; }
+  return exportImageSlide(s);
+}
+
+function showResult(items){
+  let ov=document.getElementById('resultOverlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='resultOverlay'; ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99;overflow-y:auto;padding:18px 14px 40px;display:flex;flex-direction:column;align-items:center;gap:14px;'; document.body.appendChild(ov); }
+  ov.innerHTML='';
+  const tip=document.createElement('div'); tip.style.cssText='color:#fff;font-size:14px;font-weight:600;text-align:center;line-height:1.5;'; tip.textContent='Photos: press and hold → Save to Photos.  Videos: tap the Download button.'; ov.appendChild(tip);
+  items.forEach((it,i)=>{ if(!it) return;
+    if(it.kind==='img'){ const img=document.createElement('img'); img.src=it.url; img.style.cssText='width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);'; ov.appendChild(img); }
+    else { const vid=document.createElement('video'); vid.src=it.url; vid.controls=true; vid.playsInline=true; vid.muted=true; vid.style.cssText='width:min(420px,94vw);border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);'; ov.appendChild(vid); const a=document.createElement('a'); a.href=it.url; a.download='slide-'+(i+1)+'.'+it.ext; a.textContent='⬇ Download video (slide '+(i+1)+')'; a.style.cssText='background:#5865f2;color:#fff;border-radius:8px;font-weight:600;font-size:14px;padding:12px 26px;text-decoration:none;'; ov.appendChild(a); }
+  });
+  const close=document.createElement('button'); close.textContent='Close'; close.style.cssText='background:#2a2a31;color:#fff;border:none;border-radius:8px;font-family:Inter,sans-serif;font-weight:600;font-size:14px;padding:13px 40px;cursor:pointer;margin-top:6px;'; close.onclick=()=>ov.remove(); ov.appendChild(close); ov.scrollTop=0;
+}
+
+$('dlOne').onclick=async()=>{ const it=await exportSlide(cur); if(it) showResult([it]); };
+$('dlAll').onclick=async()=>{ const items=[]; for(let i=0;i<slides.length;i++) items.push(await exportSlide(i)); showResult(items); };
+
+// sticky preview
+(function(){
+  const wrap=$('previewWrap'); let mini=false; let typing=false;
+  // while a text field is focused (keyboard open), freeze the preview state
+  document.addEventListener('focusin', e=>{
+    const t=e.target.tagName;
+    if(t==='TEXTAREA'||t==='INPUT'||t==='SELECT') typing=true;
+  });
+  document.addEventListener('focusout', ()=>{ typing=false; });
+  window.addEventListener('scroll',()=>{
+    if(typing) return;
+    if(window.innerWidth>=920){ if(mini){ mini=false; wrap.classList.remove('mini'); } return; }
+    const should=window.scrollY>120;
+    if(should!==mini){ mini=should; wrap.classList.toggle('mini',mini); setTimeout(applyTransform,260); }
+  },{passive:true});
+})();
+
+// ---------- preset logic ----------
+function renderPresetList(){
+  const sel=$('presetSelect'); const keep=sel.value; sel.innerHTML='';
+  Object.keys(presets).forEach(name=>{
+    const o=document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o);
+  });
+  if(keep && presets[keep]) sel.value=keep;
+}
+function applyPresetByName(name){
+  const p=presets[name]; if(!p) return;
+  const s=slides[cur];
+  if(s.type==='content'){ s.font=p.contentFont||p.font; s.align=p.contentAlign||p.align; s.size=p.contentSize||s.size; }
+  else { s.font=p.font; s.align=p.align; }
+  s.color=p.color||'#ffffff'; s.runs=null;
+  s.fade=p.fade; s.scrimOp=p.scrimOp; s.fadeHex=p.fadeHex;
+  contentDefaults={ size:p.contentSize||25, fade:p.fade, align:p.contentAlign||'left', font:p.contentFont||'Inter', scrimOp:p.scrimOp, fadeHex:p.fadeHex };
+  persistDefaults();
+  if(p.palette) palette=[...p.palette];
+  if(p.handle) $('handleInput').value=p.handle;
+  if(p.swipe) $('swipeInput').value=p.swipe;
+  if(p.wmPos) watermark.pos=p.wmPos;
+  if(typeof p.wmSize==='number') watermark.size=p.wmSize;
+  renderAll(); renderFooter();
+}
+$('applyPreset').onclick=()=> applyPresetByName($('presetSelect').value);
+$('savePreset').onclick=()=>{
+  const name=prompt('Name this preset:'); if(!name) return;
+  const s=slides[cur];
+  presets[name]={
+    font:s.font, color:s.color, align:s.align,
+    contentAlign:contentDefaults.align, contentFont:contentDefaults.font, contentSize:contentDefaults.size,
+    fade:s.fade, scrimOp:s.scrimOp, fadeHex:s.fadeHex,
+    handle:$('handleInput').value, swipe:$('swipeInput').value,
+    palette:[...palette], wmPos:watermark.pos, wmSize:watermark.size
+  };
+  renderPresetList(); $('presetSelect').value=name;
+  persistPresets();
+  alert('Preset "'+name+'" saved — it will be here next time too.');
+};
+$('deletePreset').onclick=()=>{
+  const name=$('presetSelect').value;
+  if(name==="Millionaire Lifestyle (default)"){ alert("Can't delete the default preset."); return; }
+  if(confirm('Delete preset "'+name+'"?')){ delete presets[name]; persistPresets(); renderPresetList(); }
+};
+
+renderPresetList();
+renderAll();
+</script>
+</body>
+</html>

@@ -187,6 +187,39 @@
     background:#b3261e;color:#fff;text-align:center;font-size:13px;font-weight:600;
     padding:10px;letter-spacing:.3px;
   }
+
+  /* ---------- desktop two-column layout ---------- */
+  .layout{ width:100%; display:flex; flex-direction:column; align-items:center; }
+  .leftCol{ width:100%; display:flex; flex-direction:column; align-items:center; }
+  .rightCol{ width:100%; display:flex; flex-direction:column; align-items:center; }
+
+  @media (min-width: 920px){
+    body{ padding:28px 28px 60px; }
+    .layout{
+      flex-direction:row; align-items:flex-start; justify-content:center;
+      gap:36px; max-width:1180px;
+    }
+    .leftCol{
+      width:auto; position:sticky; top:24px; flex:0 0 auto;
+      align-self:flex-start;
+    }
+    .previewWrap{ position:static; }
+    .previewWrap.mini .post{ /* ignore mobile shrink on desktop */
+      width:min(480px,42vw); height:calc(min(480px,42vw)*1.25);
+    }
+    .post{
+      width:min(480px,42vw); height:calc(min(480px,42vw)*1.25);
+    }
+    .rightCol{
+      width:auto; flex:1 1 460px; max-width:480px; align-items:stretch;
+    }
+    .tabs{ justify-content:flex-start; max-width:none; margin-top:0; }
+    .controls{ width:100%; max-width:none; }
+    h1{ text-align:center; }
+  }
+  @media (min-width: 1280px){
+    .post, .previewWrap.mini .post{ width:520px; height:650px; }
+  }
 </style>
 </head>
 <body>
@@ -196,6 +229,8 @@
 <h1>Carousel Template</h1>
 <div class="sub">Cover · Content · End slides &nbsp;•&nbsp; photos &amp; videos &nbsp;•&nbsp; colors, fonts, watermark</div>
 
+<div class="layout" id="layout">
+<div class="leftCol" id="leftCol">
 <div class="previewWrap" id="previewWrap">
 <div class="post" id="post">
   <div class="noimg" id="noimg">No image or video yet — choose one below</div>
@@ -216,7 +251,9 @@
   <div class="wmline wmlineR" id="wmlineR"></div>
 </div>
 </div>
+</div><!-- /leftCol -->
 
+<div class="rightCol" id="rightCol">
 <div class="tabs" id="tabs"></div>
 
 <div class="controls">
@@ -447,6 +484,8 @@
 
   <div class="hint">Color words: highlight letters in the text box, tap a swatch. Added colors auto-save on your device. Long-press a swatch to remove it. Eyedropper: upload an image, tap to grab a color. Save project keeps slides + presets to reopen later. Videos export muted. Photos: press and hold the result → Save to Photos. Videos: tap Download.</div>
 </div>
+</div><!-- /rightCol -->
+</div><!-- /layout -->
 
 <script>
 const $ = id => document.getElementById(id);
@@ -1383,6 +1422,7 @@ $('dlAll').onclick=async()=>{ const items=[]; for(let i=0;i<slides.length;i++) i
   document.addEventListener('focusout', ()=>{ typing=false; });
   window.addEventListener('scroll',()=>{
     if(typing) return;
+    if(window.innerWidth>=920){ if(mini){ mini=false; wrap.classList.remove('mini'); } return; }
     const should=window.scrollY>120;
     if(should!==mini){ mini=should; wrap.classList.toggle('mini',mini); setTimeout(applyTransform,260); }
   },{passive:true});
